@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 
-import { isAudioConfigured } from "../lib/server-env"
+import { generateSpeech } from "ai"
+
+import { getSpeechModel } from "../lib/ai"
+import { getServerEnv, isAudioConfigured } from "../lib/server-env"
 import { transcribeAudioBuffer } from "../lib/transcribe-audio"
 
 const createTestWav = () => {
@@ -28,24 +31,34 @@ const createTestWav = () => {
   return new Uint8Array(buffer)
 }
 
-const runLiveTranscriptionCheck = async () => {
+const runLiveVoiceCheck = async () => {
   if (!isAudioConfigured()) {
     console.log(
-      "⊘ Skipping live transcription check — set AI_GATEWAY_API_KEY to run it"
+      "⊘ Skipping live voice check — set AI_GATEWAY_API_KEY to run it"
     )
     return
   }
 
   const fixturePath = resolve("scripts/fixtures/grunt-sample.wav")
-  let audio: Uint8Array
+  let audio: Uint8Array | undefined
 
   try {
     audio = new Uint8Array(await readFile(fixturePath))
   } catch {
-    audio = createTestWav()
-    console.log(
-      "ℹ No scripts/fixtures/grunt-sample.wav found — using generated silent WAV fixture"
-    )
+    console.log("ℹ No voice fixture found — generating one through AI Gateway")
+  }
+
+  if (!audio) {
+    const { AI_GATEWAY_SPEECH_VOICE } = getServerEnv()
+    const speech = await generateSpeech({
+      model: getSpeechModel(),
+      text: "AI Gateway voice test.",
+      voice: AI_GATEWAY_SPEECH_VOICE,
+      outputFormat: "mp3",
+      abortSignal: AbortSignal.timeout(30_000),
+    })
+    audio = speech.audio.uint8Array
+    console.log("✓ Live AI Gateway speech generation succeeded")
   }
 
   const transcript = await transcribeAudioBuffer(audio)
@@ -113,7 +126,7 @@ const runRouteChecks = async () => {
 
 const main = async () => {
   await runRouteChecks()
-  await runLiveTranscriptionCheck()
+  await runLiveVoiceCheck()
 }
 
 main().catch((error) => {

@@ -4,6 +4,7 @@ const serverEnvSchema = z
   .object({
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),
     VERCEL_OIDC_TOKEN: z.string().min(1).optional(),
+    AI_GATEWAY_TEXT_MODEL: z.string().default("openai/gpt-5.6-sol"),
     AI_GATEWAY_TRANSCRIPTION_MODEL: z.string().default("openai/whisper-1"),
     AI_GATEWAY_SPEECH_MODEL: z.string().default("openai/tts-1"),
     AI_GATEWAY_SPEECH_VOICE: z.string().default("alloy"),
@@ -22,6 +23,7 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>
 const readServerEnvInput = () => ({
   AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
   VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
+  AI_GATEWAY_TEXT_MODEL: process.env.AI_GATEWAY_TEXT_MODEL,
   AI_GATEWAY_TRANSCRIPTION_MODEL: process.env.AI_GATEWAY_TRANSCRIPTION_MODEL,
   AI_GATEWAY_SPEECH_MODEL: process.env.AI_GATEWAY_SPEECH_MODEL,
   AI_GATEWAY_SPEECH_VOICE: process.env.AI_GATEWAY_SPEECH_VOICE,
@@ -29,8 +31,10 @@ const readServerEnvInput = () => ({
 
 let cachedServerEnv: ServerEnv | null = null
 
-export const isAudioConfigured = () =>
+export const isGatewayConfigured = () =>
   serverEnvSchema.safeParse(readServerEnvInput()).success
+
+export const isAudioConfigured = isGatewayConfigured
 
 export const getServerEnv = (): ServerEnv => {
   if (!cachedServerEnv) {

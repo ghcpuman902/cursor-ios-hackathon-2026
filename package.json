@@ -11,6 +11,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "test:translate": "pnpm dlx tsx scripts/test-translate.ts",
     "test:whisper": "pnpm dlx tsx scripts/test-whisper.ts"
   },
   "dependencies": {

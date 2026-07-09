@@ -2,6 +2,12 @@ import { gateway } from "@ai-sdk/gateway"
 
 import { getServerEnv } from "@/lib/server-env"
 
+export const getTextModel = () => {
+  const { AI_GATEWAY_TEXT_MODEL } = getServerEnv()
+
+  return gateway.languageModel(AI_GATEWAY_TEXT_MODEL)
+}
+
 export const getTranscriptionModel = () => {
   const { AI_GATEWAY_TRANSCRIPTION_MODEL } = getServerEnv()
 
