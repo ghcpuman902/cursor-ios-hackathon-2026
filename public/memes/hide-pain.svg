@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Hide the pain">
+  <rect width="400" height="280" fill="#ecf0f1"/>
+  <circle cx="200" cy="110" r="55" fill="#f4c4a8"/>
+  <circle cx="178" cy="100" r="6" fill="#2d3436"/>
+  <circle cx="222" cy="100" r="6" fill="#2d3436"/>
+  <path d="M175 135 Q200 150 225 130" stroke="#2d3436" stroke-width="4" fill="none"/>
+  <rect x="145" y="165" width="110" height="70" fill="#3498db" rx="10"/>
+  <text x="200" y="35" text-anchor="middle" fill="#2d3436" font-family="Impact,Arial Black,sans-serif" font-size="20">SORRY</text>
+</svg>
