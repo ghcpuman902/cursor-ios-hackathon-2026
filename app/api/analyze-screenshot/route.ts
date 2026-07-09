@@ -128,8 +128,8 @@ export async function POST(request: Request) {
               text: `Analyze both sides. The screenshot owner says they are into ${targetDescription}; this describes the other participant and must not be inferred from names or appearance.`,
             },
             {
-              type: "image",
-              image: imageBytes,
+              type: "file",
+              data: imageBytes,
               mediaType: screenshot.type,
             },
           ],
