@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="app-shell-bg relative isolate flex min-h-dvh flex-col overflow-hidden px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:items-center sm:justify-center sm:py-12">
+    <main className="app-shell-bg relative isolate flex min-h-full flex-col px-4 py-6 sm:items-center sm:justify-center sm:py-12">
       <div className="relative z-10 mx-auto w-full max-w-md sm:my-auto">
         <MaleTranslator
           appName={env.NEXT_PUBLIC_APP_NAME}
