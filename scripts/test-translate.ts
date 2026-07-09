@@ -117,28 +117,31 @@ const main = async () => {
           })
     const generatedResult = await requestTranslation(promptCase)
 
-    if (generatedResult.source !== "ai") {
-      throw new Error(
-        `Gateway text generation fell back for "${promptCase.input}"`
-      )
-    }
-
     if (
+      generatedResult.translation !== baseline.translation ||
       generatedResult.category !== baseline.category ||
       generatedResult.confidence !== baseline.confidence ||
       generatedResult.matchedPattern !== baseline.matchedPattern
     ) {
       throw new Error(
-        `AI enhancement changed dictionary analytics for "${promptCase.input}"`
+        `AI enhancement changed the primary dictionary reply for "${promptCase.input}"`
       )
     }
 
-    console.log(
-      `✓ ${promptCase.gender} "${promptCase.input}" → ${generatedResult.translation}`
-    )
+    if (!generatedResult.aiInsight?.trim()) {
+      throw new Error(
+        `Gateway did not attach a supplemental AI note for "${promptCase.input}"`
+      )
+    }
+
+    console.log(`✓ ${promptCase.gender} "${promptCase.input}"`)
+    console.log(`  dictionary: ${generatedResult.translation}`)
+    console.log(`  ai analysis: ${generatedResult.aiInsight}`)
   }
 
-  console.log("✓ Live AI Gateway prompt matrix preserved dictionary analytics")
+  console.log(
+    "✓ Live AI Gateway kept the dictionary reply primary and added AI analysis"
+  )
 }
 
 main().catch((error) => {

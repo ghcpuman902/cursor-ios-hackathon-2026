@@ -18,9 +18,10 @@ Edit `.env.local` with real values. Never commit it.
 
 ## AI Gateway authentication
 
-AI-enhanced translations, audio transcription, and speech generation use
+AI-supplemented translations, audio transcription, and speech generation use
 Vercel AI Gateway. Translation requests run the local dictionary first and
-fall back to that result if Gateway generation is unavailable.
+show that reply as the primary result; when Gateway generation is available it
+adds a short AI analysis note underneath, and it is simply omitted otherwise.
 
 - Vercel deployments use the automatically provided `VERCEL_OIDC_TOKEN`.
 - Local development uses `AI_GATEWAY_API_KEY`. Create a key in the

@@ -850,14 +850,23 @@ export function MaleTranslator({
                     <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 font-mono text-[10px] text-secondary-foreground hover:bg-secondary">
                       {result.confidence}%
                     </Badge>
-                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
-                      {result.source === "ai" ? "✨ AI remix" : "📖 Dictionary"}
-                    </Badge>
                   </div>
 
                   <p className="text-base leading-relaxed font-medium text-foreground">
                     &ldquo;{result.translation}&rdquo;
                   </p>
+
+                  {result.aiInsight && (
+                    <div className="mt-3 border-t border-white/10 pt-3">
+                      <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                        <Sparkles className="size-3" aria-hidden />
+                        AI analysis
+                      </p>
+                      <p className="text-sm leading-relaxed text-foreground/80">
+                        {result.aiInsight}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button

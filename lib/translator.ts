@@ -26,6 +26,8 @@ export type TranslationResult = {
   matchedPattern?: string
   isFallback: boolean
   source: "dictionary" | "ai"
+  /** Optional AI-written supplemental analysis shown under the translation */
+  aiInsight?: string
 }
 
 type TranslationDictionary = {
