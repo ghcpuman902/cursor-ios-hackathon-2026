@@ -1,14 +1,17 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import {
   ArrowRight,
   Beer,
   Copy,
   Dumbbell,
+  Mic,
+  Play,
   RefreshCw,
   Sparkles,
+  Square,
   Volume2,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -23,6 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { useAudioRecorder } from "@/hooks/use-audio-recorder"
 import { CATEGORY_LABELS } from "@/lib/translations"
 import {
   getRandomLoadingMessage,
@@ -39,6 +43,13 @@ type MaleTranslatorProps = {
   translationDelayMs: number
 }
 
+const formatDuration = (durationMs: number) => {
+  const totalSeconds = Math.floor(durationMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
 export function MaleTranslator({
   appName,
   tagline,
@@ -50,6 +61,10 @@ export function MaleTranslator({
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("")
+  const [isSpeaking, setIsSpeaking] = useState(false)
+
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const speechUrlRef = useRef<string | null>(null)
 
   const translate = useCallback(
     async (text: string) => {
@@ -73,11 +88,135 @@ export function MaleTranslator({
     [gruntMode, sarcasmLevel, translationDelayMs],
   )
 
+  const transcribeAudio = useCallback(
+    async (blob: Blob) => {
+      const formData = new FormData()
+      formData.append("audio", blob, "grunt.webm")
+
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = (await response.json()) as { text?: string; error?: string }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Transcription failed.")
+      }
+
+      if (!data.text?.trim()) {
+        throw new Error("Could not detect speech in the recording.")
+      }
+
+      setInput(data.text)
+      await translate(data.text)
+    },
+    [translate],
+  )
+
+  const {
+    status: recorderStatus,
+    durationMs,
+    startRecording,
+    stopRecording,
+    isSupported: isMicSupported,
+  } = useAudioRecorder({
+    onRecordingComplete: async (blob) => {
+      try {
+        setLoadingMessage("Decoding grunt frequencies…")
+        await transcribeAudio(blob)
+        toast.success("Grunt transcribed!", {
+          description: "Now translating what he actually meant.",
+        })
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Transcription failed."
+        toast.error("Could not decode that grunt.", { description: message })
+      }
+    },
+  })
+
   const handleSubmit = () => translate(input)
 
   const handleSample = (phrase: string) => {
     setInput(phrase)
     void translate(phrase)
+  }
+
+  const handleToggleRecording = async () => {
+    if (recorderStatus === "recording") {
+      stopRecording()
+      return
+    }
+
+    if (recorderStatus === "processing" || isTranslating) return
+
+    try {
+      await startRecording()
+    } catch {
+      toast.error("Microphone access denied.", {
+        description: "Allow mic access to record what he grunted.",
+      })
+    }
+  }
+
+  const stopSpeechPlayback = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+
+    if (speechUrlRef.current) {
+      URL.revokeObjectURL(speechUrlRef.current)
+      speechUrlRef.current = null
+    }
+
+    setIsSpeaking(false)
+  }, [])
+
+  const handleSpeakTranslation = async () => {
+    if (!result || isSpeaking) return
+
+    stopSpeechPlayback()
+    setIsSpeaking(true)
+
+    try {
+      const response = await fetch("/api/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: result.translation }),
+      })
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string }
+        throw new Error(data.error ?? "Speech generation failed.")
+      }
+
+      const audioBlob = await response.blob()
+      const audioUrl = URL.createObjectURL(audioBlob)
+      speechUrlRef.current = audioUrl
+
+      const audio = new Audio(audioUrl)
+      audioRef.current = audio
+
+      audio.onended = () => {
+        stopSpeechPlayback()
+      }
+
+      audio.onerror = () => {
+        stopSpeechPlayback()
+        toast.error("Playback failed.", {
+          description: "Could not play the generated audio.",
+        })
+      }
+
+      await audio.play()
+    } catch (error) {
+      stopSpeechPlayback()
+      const message =
+        error instanceof Error ? error.message : "Speech generation failed."
+      toast.error("Could not generate speech.", { description: message })
+    }
   }
 
   const copyResult = async () => {
@@ -96,6 +235,10 @@ export function MaleTranslator({
         : sarcasmLevel <= 8
           ? "Spicy"
           : "Nuclear"
+
+  const isRecorderBusy =
+    recorderStatus === "recording" || recorderStatus === "processing"
+  const isBusy = isTranslating || isRecorderBusy
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
@@ -128,7 +271,8 @@ export function MaleTranslator({
             What he said
           </CardTitle>
           <CardDescription>
-            Paste the text, grunt, or emotionally unavailable sentence below.
+            Paste the text, grunt, or emotionally unavailable sentence below — or
+            record the grunt directly.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -144,7 +288,47 @@ export function MaleTranslator({
             }}
             rows={3}
             className="resize-none"
+            disabled={isBusy}
           />
+
+          {isMicSupported && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant={recorderStatus === "recording" ? "destructive" : "outline"}
+                onClick={handleToggleRecording}
+                disabled={isBusy && recorderStatus !== "recording"}
+                aria-label={
+                  recorderStatus === "recording"
+                    ? "Stop recording grunt"
+                    : "Record a grunt"
+                }
+              >
+                {recorderStatus === "recording" ? (
+                  <>
+                    <Square className="fill-current" aria-hidden />
+                    Stop recording
+                  </>
+                ) : recorderStatus === "processing" ? (
+                  <>
+                    <RefreshCw className="animate-spin" aria-hidden />
+                    Transcribing…
+                  </>
+                ) : (
+                  <>
+                    <Mic aria-hidden />
+                    Record grunt
+                  </>
+                )}
+              </Button>
+
+              {recorderStatus === "recording" && (
+                <span className="text-sm text-muted-foreground">
+                  Recording {formatDuration(durationMs)}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <span className="w-full text-xs text-muted-foreground">
@@ -163,7 +347,7 @@ export function MaleTranslator({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSample(phrase)}
-                disabled={isTranslating}
+                disabled={isBusy}
               >
                 &ldquo;{phrase}&rdquo;
               </Button>
@@ -172,7 +356,7 @@ export function MaleTranslator({
 
           <Button
             onClick={handleSubmit}
-            disabled={isTranslating}
+            disabled={isBusy}
             className="w-full sm:w-auto"
           >
             {isTranslating ? (
@@ -192,7 +376,7 @@ export function MaleTranslator({
       </Card>
 
       <AnimatePresence mode="wait">
-        {isTranslating && (
+        {(isTranslating || recorderStatus === "processing") && (
           <motion.div
             key="loading"
             initial={{ opacity: 0, y: 8 }}
@@ -209,7 +393,7 @@ export function MaleTranslator({
           </motion.div>
         )}
 
-        {result && !isTranslating && (
+        {result && !isTranslating && recorderStatus !== "processing" && (
           <motion.div
             key="result"
             initial={{ opacity: 0, y: 12 }}
@@ -258,6 +442,25 @@ export function MaleTranslator({
                 )}
 
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSpeakTranslation}
+                    disabled={isSpeaking}
+                    aria-label="Hear translation aloud"
+                  >
+                    {isSpeaking ? (
+                      <>
+                        <RefreshCw className="animate-spin" aria-hidden />
+                        Playing…
+                      </>
+                    ) : (
+                      <>
+                        <Play aria-hidden />
+                        Hear translation
+                      </>
+                    )}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={copyResult}>
                     <Copy aria-hidden />
                     Copy translation
@@ -266,6 +469,7 @@ export function MaleTranslator({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
+                      stopSpeechPlayback()
                       setResult(null)
                       setInput("")
                     }}
@@ -286,7 +490,8 @@ export function MaleTranslator({
         </p>
         <p className="mt-1">
           Tip: Press <kbd className="rounded border px-1">⌘</kbd>+
-          <kbd className="rounded border px-1">Enter</kbd> to translate.
+          <kbd className="rounded border px-1">Enter</kbd> to translate, or tap
+          the mic to record a grunt.
         </p>
       </footer>
     </div>
