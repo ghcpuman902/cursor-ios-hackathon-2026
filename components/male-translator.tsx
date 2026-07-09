@@ -19,17 +19,50 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { VoiceNoteRecorder } from "@/components/voice-note-recorder"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
-import { SAMPLE_PHRASES, CATEGORY_LABELS } from "@/lib/translations"
+import { SAMPLE_PHRASES, FEMALE_SAMPLE_PHRASES, CATEGORY_LABELS } from "@/lib/translations"
 import {
   getRandomLoadingMessage,
+  getRandomFemaleLoadingMessage,
   translateMale,
+  translateFemale,
   type TranslationResult,
 } from "@/lib/translator"
 import { cn } from "@/lib/utils"
 
+type TranslatorGender = "male" | "female"
+
+const GENDER_CONFIG = {
+  male: {
+    appName: "Male Translator™",
+    tagline: "Decoding grunts, shrugs, and three-word texts since forever",
+    subjectLabel: "He said",
+    typeLabel: "Type what he said",
+    typePlaceholder: `e.g. "I'm fine", "k", "do whatever you want"`,
+    recordPrompt: "Record what he actually said",
+    idleHint: "Tap record. Grunts, mumbles, and one-word texts all count.",
+    emptyToastTitle: "He said nothing. That's also data.",
+    transcribeLoading: "Decoding grunt frequencies…",
+    transcribeError: "Could not decode that grunt.",
+    samplePhrases: SAMPLE_PHRASES,
+  },
+  female: {
+    appName: "Female Translator™",
+    tagline: "Decoding \"fine\", punctuation, and what she actually meant",
+    subjectLabel: "She said",
+    typeLabel: "Type what she said",
+    typePlaceholder: `e.g. "I'm fine", "it's fine", "we need to talk"`,
+    recordPrompt: "Record what she actually said",
+    idleHint: "Tap record. Tone, pauses, and word choice all count.",
+    emptyToastTitle: "She said nothing. That's also data.",
+    transcribeLoading: "Reading between the lines…",
+    transcribeError: "Could not transcribe that.",
+    samplePhrases: FEMALE_SAMPLE_PHRASES,
+  },
+} as const
+
 type MaleTranslatorProps = {
-  appName: string
-  tagline: string
+  appName?: string
+  tagline?: string
   sarcasmLevel: number
   gruntMode: boolean
   translationDelayMs: number
@@ -38,12 +71,18 @@ type MaleTranslatorProps = {
 type ViewMode = "voice" | "type"
 
 export function MaleTranslator({
-  appName,
-  tagline,
+  appName: appNameProp,
+  tagline: taglineProp,
   sarcasmLevel,
   gruntMode,
   translationDelayMs,
 }: MaleTranslatorProps) {
+  const [gender, setGender] = useState<TranslatorGender>("male")
+  const genderConfig = GENDER_CONFIG[gender]
+  const appName = gender === "male" && appNameProp ? appNameProp : genderConfig.appName
+  const tagline =
+    gender === "male" && taglineProp ? taglineProp : genderConfig.tagline
+
   const [viewMode, setViewMode] = useState<ViewMode>("voice")
   const [input, setInput] = useState("")
   const [result, setResult] = useState<TranslationResult | null>(null)
@@ -57,23 +96,30 @@ export function MaleTranslator({
   const translate = useCallback(
     async (text: string) => {
       if (!text.trim()) {
-        toast.error("He said nothing. That's also data.", {
+        toast.error(genderConfig.emptyToastTitle, {
           description: "Record a voice note or type something first.",
         })
         return
       }
 
       setIsTranslating(true)
-      setLoadingMessage(getRandomLoadingMessage())
+      setLoadingMessage(
+        gender === "female"
+          ? getRandomFemaleLoadingMessage()
+          : getRandomLoadingMessage(),
+      )
       setResult(null)
 
       await new Promise((resolve) => setTimeout(resolve, translationDelayMs))
 
-      const translation = translateMale(text, { sarcasmLevel, gruntMode })
+      const translation =
+        gender === "female"
+          ? translateFemale(text, { sarcasmLevel, gruntMode })
+          : translateMale(text, { sarcasmLevel, gruntMode })
       setResult(translation)
       setIsTranslating(false)
     },
-    [gruntMode, sarcasmLevel, translationDelayMs],
+    [gender, genderConfig.emptyToastTitle, gruntMode, sarcasmLevel, translationDelayMs],
   )
 
   const transcribeAudio = useCallback(
@@ -85,7 +131,7 @@ export function MaleTranslator({
           : "webm"
 
       const formData = new FormData()
-      formData.append("audio", blob, `grunt.${extension}`)
+      formData.append("audio", blob, `note.${extension}`)
 
       const response = await fetch("/api/transcribe", {
         method: "POST",
@@ -108,6 +154,21 @@ export function MaleTranslator({
     [translate],
   )
 
+  const handleRecordingComplete = useCallback(
+    async (blob: Blob) => {
+      try {
+        setLoadingMessage(genderConfig.transcribeLoading)
+        await transcribeAudio(blob)
+        toast.success("Voice note transcribed!")
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Transcription failed."
+        toast.error(genderConfig.transcribeError, { description: message })
+      }
+    },
+    [genderConfig.transcribeError, genderConfig.transcribeLoading, transcribeAudio],
+  )
+
   const {
     status: recorderStatus,
     durationMs,
@@ -117,17 +178,7 @@ export function MaleTranslator({
     stopRecording,
     isSupported: isMicSupported,
   } = useAudioRecorder({
-    onRecordingComplete: async (blob) => {
-      try {
-        setLoadingMessage("Decoding grunt frequencies…")
-        await transcribeAudio(blob)
-        toast.success("Voice note transcribed!")
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Transcription failed."
-        toast.error("Could not decode that grunt.", { description: message })
-      }
-    },
+    onRecordingComplete: handleRecordingComplete,
   })
 
   const handleToggleRecording = async () => {
@@ -217,6 +268,14 @@ export function MaleTranslator({
     toast.success("Copied!")
   }
 
+  const handleGenderChange = (nextGender: TranslatorGender) => {
+    if (nextGender === gender) return
+    stopSpeechPlayback()
+    setGender(nextGender)
+    setInput("")
+    setResult(null)
+  }
+
   const sarcasmLabel =
     sarcasmLevel <= 3
       ? "Gentle"
@@ -233,13 +292,13 @@ export function MaleTranslator({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
       <header className="space-y-4 text-center">
-        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/60 uppercase backdrop-blur-md">
-          <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/50 uppercase">
+          <span className="size-1.5 rounded-full bg-white/50" />
           Live decode
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-gradient-brand text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {appName}
           </h1>
           <p className="mx-auto max-w-xs text-sm leading-relaxed text-white/50">
@@ -261,6 +320,31 @@ export function MaleTranslator({
           )}
         </div>
       </header>
+
+      <div
+        className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md"
+        role="tablist"
+        aria-label="Translator mode"
+      >
+        {(["male", "female"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            role="tab"
+            aria-selected={gender === mode}
+            onClick={() => handleGenderChange(mode)}
+            disabled={isBusy}
+            className={cn(
+              "flex flex-1 items-center justify-center rounded-full py-2 text-sm font-medium transition-all",
+              gender === mode
+                ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                : "text-white/45 hover:text-white/70",
+            )}
+          >
+            {mode === "male" ? "Male" : "Female"}
+          </button>
+        ))}
+      </div>
 
       <div className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md">
         {(["voice", "type"] as const).map((mode) => (
@@ -294,6 +378,8 @@ export function MaleTranslator({
               waveformHistory={waveformHistory}
               liveLevels={liveLevels}
               transcript={input}
+              recordPrompt={genderConfig.recordPrompt}
+              idleHint={genderConfig.idleHint}
               disabled={isBusy && recorderStatus !== "recording"}
               onToggleRecording={() => void handleToggleRecording()}
               onSwitchToType={() => setViewMode("type")}
@@ -317,7 +403,7 @@ export function MaleTranslator({
             <Button
               onClick={handleSubmit}
               disabled={isBusy}
-              className="h-12 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-[0_0_30px_rgba(139,92,246,0.35)] hover:from-violet-500 hover:to-cyan-400"
+              className="h-12 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
               size="lg"
             >
               <Sparkles aria-hidden />
@@ -328,10 +414,10 @@ export function MaleTranslator({
         </div>
       ) : (
         <GlassPanel className="space-y-4 p-5">
-          <p className="text-sm font-medium text-white/80">Type what he said</p>
+          <p className="text-sm font-medium text-white/80">{genderConfig.typeLabel}</p>
 
           <Textarea
-            placeholder={`e.g. "I'm fine", "k", "do whatever you want"`}
+            placeholder={genderConfig.typePlaceholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -341,12 +427,12 @@ export function MaleTranslator({
               }
             }}
             rows={4}
-            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-violet-400/50 focus-visible:ring-violet-400/20"
+            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-white/25 focus-visible:ring-white/10"
             disabled={isBusy}
           />
 
           <div className="flex flex-wrap gap-2">
-            {SAMPLE_PHRASES.map((phrase) => (
+            {genderConfig.samplePhrases.map((phrase) => (
               <Button
                 key={phrase}
                 variant="outline"
@@ -363,7 +449,7 @@ export function MaleTranslator({
           <Button
             onClick={handleSubmit}
             disabled={isBusy}
-            className="h-11 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white hover:from-violet-500 hover:to-cyan-400"
+            className="h-11 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
           >
             <Sparkles aria-hidden />
             Translate
@@ -381,7 +467,7 @@ export function MaleTranslator({
             exit={{ opacity: 0, y: -8 }}
           >
             <GlassPanel variant="subtle" className="px-4 py-8 text-center">
-              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-violet-400" />
+              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-white/70" />
               <p className="text-sm text-white/50">{loadingMessage}</p>
             </GlassPanel>
           </motion.div>
@@ -398,7 +484,7 @@ export function MaleTranslator({
             <div className="flex justify-start">
               <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/80 backdrop-blur-xl">
                 <p className="text-[10px] font-semibold tracking-[0.16em] text-white/40 uppercase">
-                  He said
+                  {genderConfig.subjectLabel}
                 </p>
                 <p className="mt-1 text-white/90">&ldquo;{result.input}&rdquo;</p>
               </div>
@@ -410,7 +496,7 @@ export function MaleTranslator({
                 className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-violet-300/80 uppercase">
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-white/45 uppercase">
                     Translation
                   </p>
                   <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 text-[10px] text-white/80">

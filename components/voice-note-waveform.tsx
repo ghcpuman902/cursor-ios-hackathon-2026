@@ -79,9 +79,9 @@ function WaveformBar({
     "w-[3px] rounded-full sm:w-1",
     isRecording
       ? isRecent
-        ? "bg-gradient-to-t from-violet-400 to-cyan-300"
-        : "bg-gradient-to-t from-violet-500/50 to-cyan-400/40"
-      : "bg-gradient-to-t from-white/25 to-white/60",
+        ? "bg-white/90"
+        : "bg-white/35"
+      : "bg-white/25",
   )
 
   if (reduceMotion) {

@@ -1,3 +1,4 @@
+import type { Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
@@ -13,6 +14,11 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+export const viewport: Viewport = {
+  themeColor: "#0e0e10",
+  viewportFit: "cover",
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,14 +29,14 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-        "antialiased",
+        "dark antialiased",
         fontMono.variable,
         "font-sans",
         geist.variable,
       )}
     >
-      <body>
-        <ThemeProvider>
+      <body className="app-shell-bg">
+        <ThemeProvider forcedTheme="dark">
           <TooltipProvider>
             {children}
             <Toaster />
