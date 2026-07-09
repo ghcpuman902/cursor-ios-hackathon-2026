@@ -1,41 +1,23 @@
 import type { Metadata } from "next"
 
-import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { MaleTranslator } from "@/components/male-translator"
+import { env } from "@/lib/env"
 
 export const metadata: Metadata = {
-  title: "Next.js Starter",
-  description: "A minimal Next.js starter template.",
+  title: env.NEXT_PUBLIC_APP_NAME,
+  description: env.NEXT_PUBLIC_APP_TAGLINE,
 }
 
 export default function Page() {
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle>Next.js Starter</CardTitle>
-            <Badge variant="secondary">Ready</Badge>
-          </div>
-          <CardDescription>
-            TypeScript, Tailwind CSS 4, and shadcn/ui are configured. Replace
-            this page with your app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            Run <code className="text-foreground">pnpm dev</code> to start the
-            dev server. Press <kbd>d</kbd> to toggle dark mode.
-          </p>
-          <p>Deployed to Vercel.</p>
-        </CardContent>
-      </Card>
+    <main className="min-h-svh bg-gradient-to-b from-background to-muted/40 px-4 py-10 sm:px-6 sm:py-16">
+      <MaleTranslator
+        appName={env.NEXT_PUBLIC_APP_NAME}
+        tagline={env.NEXT_PUBLIC_APP_TAGLINE}
+        sarcasmLevel={env.NEXT_PUBLIC_SARCASM_LEVEL}
+        gruntMode={env.NEXT_PUBLIC_GRUNT_MODE}
+        translationDelayMs={env.NEXT_PUBLIC_TRANSLATION_DELAY_MS}
+      />
     </main>
   )
 }
