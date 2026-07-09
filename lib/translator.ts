@@ -23,6 +23,7 @@ export type TranslationResult = {
   confidence: number
   matchedPattern?: string
   isFallback: boolean
+  source: "dictionary" | "ai"
 }
 
 type TranslationDictionary = {
@@ -67,6 +68,7 @@ const translateFromDictionary = (
       category: "mystery",
       confidence: 108,
       isFallback: true,
+      source: "dictionary",
     }
   }
 
@@ -88,6 +90,7 @@ const translateFromDictionary = (
       confidence: match.confidence + confidenceBoost,
       matchedPattern: match.pattern,
       isFallback: false,
+      source: "dictionary",
     }
   }
 
@@ -100,6 +103,7 @@ const translateFromDictionary = (
     category: "mystery",
     confidence: 101 + options.sarcasmLevel,
     isFallback: true,
+    source: "dictionary",
   }
 }
 

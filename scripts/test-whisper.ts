@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 
-import { isAudioConfigured } from "../lib/server-env"
-import {
-  resolveAudioMediaType,
-  transcribeAudioBuffer,
-} from "../lib/transcribe-audio"
+import { generateSpeech } from "ai"
+
+import { getSpeechModel } from "../lib/ai"
+import { getServerEnv, isAudioConfigured } from "../lib/server-env"
+import { transcribeAudioBuffer } from "../lib/transcribe-audio"
 
 const createTestWav = () => {
   const sampleRate = 16_000
@@ -31,64 +31,51 @@ const createTestWav = () => {
   return new Uint8Array(buffer)
 }
 
-const assert = (condition: boolean, message: string) => {
-  if (!condition) {
-    throw new Error(message)
-  }
-}
-
-const runUnitChecks = () => {
-  const wav = createTestWav()
-
-  assert(
-    resolveAudioMediaType(undefined, wav) === "audio/wav",
-    "Expected WAV signature detection",
-  )
-  assert(
-    resolveAudioMediaType("audio/webm;codecs=opus", wav) === "audio/wav",
-    "Declared webm type should not override mismatched WAV bytes",
-  )
-  assert(
-    resolveAudioMediaType("audio/webm", wav) === "audio/wav",
-    "Declared webm type should fall back to detected WAV bytes",
-  )
-
-  console.log("✓ resolveAudioMediaType unit checks passed")
-}
-
-const runLiveWhisperCheck = async () => {
+const runLiveVoiceCheck = async () => {
   if (!isAudioConfigured()) {
     console.log(
-      "⊘ Skipping live Whisper check — set OPENAI_API_KEY to run end-to-end transcription",
+      "⊘ Skipping live voice check — set AI_GATEWAY_API_KEY to run it"
     )
     return
   }
 
   const fixturePath = resolve("scripts/fixtures/grunt-sample.wav")
-  let audio: Uint8Array
+  let audio: Uint8Array | undefined
 
   try {
     audio = new Uint8Array(await readFile(fixturePath))
   } catch {
-    audio = createTestWav()
-    console.log(
-      "ℹ No scripts/fixtures/grunt-sample.wav found — using generated silent WAV fixture",
-    )
+    console.log("ℹ No voice fixture found — generating one through AI Gateway")
   }
 
-  const transcript = await transcribeAudioBuffer(audio, "audio/wav")
+  if (!audio) {
+    const { AI_GATEWAY_SPEECH_VOICE } = getServerEnv()
+    const speech = await generateSpeech({
+      model: getSpeechModel(),
+      text: "AI Gateway voice test.",
+      voice: AI_GATEWAY_SPEECH_VOICE,
+      outputFormat: "mp3",
+      abortSignal: AbortSignal.timeout(30_000),
+    })
+    audio = speech.audio.uint8Array
+    console.log("✓ Live AI Gateway speech generation succeeded")
+  }
 
-  console.log("✓ Live Whisper transcription succeeded")
+  const transcript = await transcribeAudioBuffer(audio)
+
+  console.log("✓ Live AI Gateway transcription succeeded")
   console.log(`  text: ${transcript.text || "(empty)"}`)
   console.log(`  language: ${transcript.language ?? "unknown"}`)
   console.log(
-    `  duration: ${transcript.durationInSeconds?.toFixed(2) ?? "unknown"}s`,
+    `  duration: ${transcript.durationInSeconds?.toFixed(2) ?? "unknown"}s`
   )
 }
 
 const runRouteChecks = async () => {
-  const previousKey = process.env.OPENAI_API_KEY
-  delete process.env.OPENAI_API_KEY
+  const previousApiKey = process.env.AI_GATEWAY_API_KEY
+  const previousOidcToken = process.env.VERCEL_OIDC_TOKEN
+  delete process.env.AI_GATEWAY_API_KEY
+  delete process.env.VERCEL_OIDC_TOKEN
 
   try {
     const { POST } = await import("../app/api/transcribe/route")
@@ -97,45 +84,52 @@ const runRouteChecks = async () => {
     formData.append(
       "audio",
       new Blob([wav], { type: "audio/wav" }),
-      "grunt.wav",
+      "grunt.wav"
     )
 
     const response = await POST(
       new Request("http://localhost/api/transcribe", {
         method: "POST",
         body: formData,
-      }),
+      })
     )
 
     const body = (await response.json()) as { error?: string }
 
     if (response.status !== 503) {
       throw new Error(
-        `Expected 503 when OPENAI_API_KEY is missing, got ${response.status}`,
+        `Expected 503 when Gateway authentication is missing, got ${response.status}`
       )
     }
 
-    if (!body.error?.includes("OPENAI_API_KEY")) {
-      throw new Error("Expected a helpful missing API key error message")
+    if (!body.error?.includes("AI Gateway")) {
+      throw new Error(
+        "Expected a helpful missing Gateway authentication message"
+      )
     }
 
-    console.log("✓ /api/transcribe returns 503 when OPENAI_API_KEY is missing")
+    console.log("✓ /api/transcribe returns 503 without Gateway authentication")
   } finally {
-    if (previousKey) {
-      process.env.OPENAI_API_KEY = previousKey
+    if (previousApiKey) {
+      process.env.AI_GATEWAY_API_KEY = previousApiKey
     } else {
-      delete process.env.OPENAI_API_KEY
+      delete process.env.AI_GATEWAY_API_KEY
+    }
+
+    if (previousOidcToken) {
+      process.env.VERCEL_OIDC_TOKEN = previousOidcToken
+    } else {
+      delete process.env.VERCEL_OIDC_TOKEN
     }
   }
 }
 
 const main = async () => {
-  runUnitChecks()
   await runRouteChecks()
-  await runLiveWhisperCheck()
+  await runLiveVoiceCheck()
 }
 
 main().catch((error) => {
-  console.error("Whisper test failed:", error)
+  console.error("AI Gateway audio test failed:", error)
   process.exitCode = 1
 })

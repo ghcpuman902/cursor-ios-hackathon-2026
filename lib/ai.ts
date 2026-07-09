@@ -1,15 +1,21 @@
-import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai"
+import { gateway } from "@ai-sdk/gateway"
 
 import { getServerEnv } from "@/lib/server-env"
 
-let cachedOpenAI: OpenAIProvider | null = null
+export const getTextModel = () => {
+  const { AI_GATEWAY_TEXT_MODEL } = getServerEnv()
 
-export const getOpenAI = (): OpenAIProvider => {
-  if (!cachedOpenAI) {
-    cachedOpenAI = createOpenAI({
-      apiKey: getServerEnv().OPENAI_API_KEY,
-    })
-  }
+  return gateway.languageModel(AI_GATEWAY_TEXT_MODEL)
+}
 
-  return cachedOpenAI
+export const getTranscriptionModel = () => {
+  const { AI_GATEWAY_TRANSCRIPTION_MODEL } = getServerEnv()
+
+  return gateway.transcriptionModel(AI_GATEWAY_TRANSCRIPTION_MODEL)
+}
+
+export const getSpeechModel = () => {
+  const { AI_GATEWAY_SPEECH_MODEL } = getServerEnv()
+
+  return gateway.speechModel(AI_GATEWAY_SPEECH_MODEL)
 }

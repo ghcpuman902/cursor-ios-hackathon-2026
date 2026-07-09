@@ -11,15 +11,14 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "test:translate": "pnpm dlx tsx scripts/test-translate.ts",
     "test:whisper": "pnpm dlx tsx scripts/test-whisper.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.9",
-    "@ai-sdk/provider": "^4.0.2",
-    "@ai-sdk/provider-utils": "^5.0.6",
+    "@ai-sdk/gateway": "^4.0.15",
     "@base-ui/react": "^1.6.0",
     "@shadcn/react": "^0.2.1",
-    "ai": "^7.0.18",
+    "ai": "^7.0.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

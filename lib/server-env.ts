@@ -1,25 +1,40 @@
 import { z } from "zod"
 
-const serverEnvSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required for audio features"),
-  OPENAI_TRANSCRIPTION_MODEL: z.string().default("whisper-1"),
-  OPENAI_SPEECH_MODEL: z.string().default("tts-1"),
-  OPENAI_SPEECH_VOICE: z.string().default("alloy"),
-})
+const serverEnvSchema = z
+  .object({
+    AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+    VERCEL_OIDC_TOKEN: z.string().min(1).optional(),
+    AI_GATEWAY_TEXT_MODEL: z.string().default("openai/gpt-5.6-sol"),
+    AI_GATEWAY_TRANSCRIPTION_MODEL: z.string().default("openai/whisper-1"),
+    AI_GATEWAY_SPEECH_MODEL: z.string().default("openai/tts-1"),
+    AI_GATEWAY_SPEECH_VOICE: z.string().default("alloy"),
+  })
+  .refine(
+    ({ AI_GATEWAY_API_KEY, VERCEL_OIDC_TOKEN }) =>
+      Boolean(AI_GATEWAY_API_KEY || VERCEL_OIDC_TOKEN),
+    {
+      message:
+        "AI Gateway authentication requires AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN",
+    }
+  )
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
 
 const readServerEnvInput = () => ({
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  OPENAI_TRANSCRIPTION_MODEL: process.env.OPENAI_TRANSCRIPTION_MODEL,
-  OPENAI_SPEECH_MODEL: process.env.OPENAI_SPEECH_MODEL,
-  OPENAI_SPEECH_VOICE: process.env.OPENAI_SPEECH_VOICE,
+  AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+  VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
+  AI_GATEWAY_TEXT_MODEL: process.env.AI_GATEWAY_TEXT_MODEL,
+  AI_GATEWAY_TRANSCRIPTION_MODEL: process.env.AI_GATEWAY_TRANSCRIPTION_MODEL,
+  AI_GATEWAY_SPEECH_MODEL: process.env.AI_GATEWAY_SPEECH_MODEL,
+  AI_GATEWAY_SPEECH_VOICE: process.env.AI_GATEWAY_SPEECH_VOICE,
 })
 
 let cachedServerEnv: ServerEnv | null = null
 
-export const isAudioConfigured = () =>
+export const isGatewayConfigured = () =>
   serverEnvSchema.safeParse(readServerEnvInput()).success
+
+export const isAudioConfigured = isGatewayConfigured
 
 export const getServerEnv = (): ServerEnv => {
   if (!cachedServerEnv) {

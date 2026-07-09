@@ -19,7 +19,11 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { VoiceNoteRecorder } from "@/components/voice-note-recorder"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
-import { SAMPLE_PHRASES, FEMALE_SAMPLE_PHRASES, CATEGORY_LABELS } from "@/lib/translations"
+import {
+  SAMPLE_PHRASES,
+  FEMALE_SAMPLE_PHRASES,
+  CATEGORY_LABELS,
+} from "@/lib/translations"
 import {
   getRandomLoadingMessage,
   getRandomFemaleLoadingMessage,
@@ -79,7 +83,8 @@ export function MaleTranslator({
 }: MaleTranslatorProps) {
   const [gender, setGender] = useState<TranslatorGender>("male")
   const genderConfig = GENDER_CONFIG[gender]
-  const appName = gender === "male" && appNameProp ? appNameProp : genderConfig.appName
+  const appName =
+    gender === "male" && appNameProp ? appNameProp : genderConfig.appName
   const tagline =
     gender === "male" && taglineProp ? taglineProp : genderConfig.tagline
 
@@ -106,20 +111,49 @@ export function MaleTranslator({
       setLoadingMessage(
         gender === "female"
           ? getRandomFemaleLoadingMessage()
-          : getRandomLoadingMessage(),
+          : getRandomLoadingMessage()
       )
       setResult(null)
 
       await new Promise((resolve) => setTimeout(resolve, translationDelayMs))
 
-      const translation =
+      const dictionaryTranslation =
         gender === "female"
           ? translateFemale(text, { sarcasmLevel, gruntMode })
           : translateMale(text, { sarcasmLevel, gruntMode })
-      setResult(translation)
-      setIsTranslating(false)
+
+      try {
+        const response = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            input: text,
+            gender,
+            sarcasmLevel,
+            gruntMode,
+          }),
+          signal: AbortSignal.timeout(20_000),
+        })
+
+        if (!response.ok) {
+          throw new Error("AI translation request failed.")
+        }
+
+        const translation = (await response.json()) as TranslationResult
+        setResult(translation)
+      } catch {
+        setResult(dictionaryTranslation)
+      } finally {
+        setIsTranslating(false)
+      }
     },
-    [gender, genderConfig.emptyToastTitle, gruntMode, sarcasmLevel, translationDelayMs],
+    [
+      gender,
+      genderConfig.emptyToastTitle,
+      gruntMode,
+      sarcasmLevel,
+      translationDelayMs,
+    ]
   )
 
   const transcribeAudio = useCallback(
@@ -151,7 +185,7 @@ export function MaleTranslator({
       setInput(data.text)
       await translate(data.text)
     },
-    [translate],
+    [translate]
   )
 
   const handleRecordingComplete = useCallback(
@@ -166,7 +200,11 @@ export function MaleTranslator({
         toast.error(genderConfig.transcribeError, { description: message })
       }
     },
-    [genderConfig.transcribeError, genderConfig.transcribeLoading, transcribeAudio],
+    [
+      genderConfig.transcribeError,
+      genderConfig.transcribeLoading,
+      transcribeAudio,
+    ]
   )
 
   const {
@@ -338,7 +376,7 @@ export function MaleTranslator({
               "flex flex-1 items-center justify-center rounded-full py-2 text-sm font-medium transition-all",
               gender === mode
                 ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                : "text-white/45 hover:text-white/70",
+                : "text-white/45 hover:text-white/70"
             )}
           >
             {mode === "male" ? "Male" : "Female"}
@@ -356,7 +394,7 @@ export function MaleTranslator({
               "flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-all",
               viewMode === mode
                 ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                : "text-white/45 hover:text-white/70",
+                : "text-white/45 hover:text-white/70"
             )}
           >
             {mode === "voice" ? (
@@ -414,7 +452,9 @@ export function MaleTranslator({
         </div>
       ) : (
         <GlassPanel className="space-y-4 p-5">
-          <p className="text-sm font-medium text-white/80">{genderConfig.typeLabel}</p>
+          <p className="text-sm font-medium text-white/80">
+            {genderConfig.typeLabel}
+          </p>
 
           <Textarea
             placeholder={genderConfig.typePlaceholder}
@@ -427,7 +467,7 @@ export function MaleTranslator({
               }
             }}
             rows={4}
-            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-white/25 focus-visible:ring-white/10"
+            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white backdrop-blur-sm placeholder:text-white/30 focus-visible:border-white/25 focus-visible:ring-white/10"
             disabled={isBusy}
           />
 
@@ -486,7 +526,9 @@ export function MaleTranslator({
                 <p className="text-[10px] font-semibold tracking-[0.16em] text-white/40 uppercase">
                   {genderConfig.subjectLabel}
                 </p>
-                <p className="mt-1 text-white/90">&ldquo;{result.input}&rdquo;</p>
+                <p className="mt-1 text-white/90">
+                  &ldquo;{result.input}&rdquo;
+                </p>
               </div>
             </div>
 

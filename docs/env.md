@@ -16,6 +16,18 @@ cp .env.example .env.local
 
 Edit `.env.local` with real values. Never commit it.
 
+## AI Gateway authentication
+
+AI-enhanced translations, audio transcription, and speech generation use
+Vercel AI Gateway. Translation requests run the local dictionary first and
+fall back to that result if Gateway generation is unavailable.
+
+- Vercel deployments use the automatically provided `VERCEL_OIDC_TOKEN`.
+- Local development uses `AI_GATEWAY_API_KEY`. Create a key in the
+  [AI Gateway dashboard](https://vercel.com/ai-gateway) and add it to
+  `.env.local`.
+- Optional model and voice overrides are documented in `.env.example`.
+
 ## Next.js conventions
 
 - `NEXT_PUBLIC_*` — exposed to the browser; use only for non-sensitive public config.
