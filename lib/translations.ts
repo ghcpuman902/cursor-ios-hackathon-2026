@@ -464,6 +464,15 @@ export const SAMPLE_PHRASES = [
   "Bruh",
 ] as const
 
+export const FEMALE_SAMPLE_PHRASES = [
+  "I'm fine",
+  "It's fine",
+  "Do whatever you want",
+  "We need to talk",
+  "Nothing",
+  "Sure",
+] as const
+
 export const LOADING_MESSAGES = [
   "Consulting the Council of Dudes…",
   "Decoding shrug intensity…",

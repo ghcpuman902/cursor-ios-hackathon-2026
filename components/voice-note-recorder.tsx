@@ -18,6 +18,8 @@ type VoiceNoteRecorderProps = {
   liveLevels: number[]
   transcript?: string
   disabled?: boolean
+  recordPrompt?: string
+  idleHint?: string
   onToggleRecording: () => void
   onSwitchToType?: () => void
 }
@@ -29,6 +31,8 @@ export function VoiceNoteRecorder({
   liveLevels,
   transcript,
   disabled = false,
+  recordPrompt = "Record what they actually said",
+  idleHint = "Tap record when you're ready.",
   onToggleRecording,
   onSwitchToType,
 }: VoiceNoteRecorderProps) {
@@ -48,7 +52,7 @@ export function VoiceNoteRecorder({
                 ? "Listening…"
                 : isProcessing
                   ? "Transcribing…"
-                  : "Record what he actually said"}
+                  : recordPrompt}
             </p>
           </div>
           {onSwitchToType && (
@@ -108,7 +112,7 @@ export function VoiceNoteRecorder({
           <p className="max-w-[16rem] text-center text-xs leading-relaxed text-white/40">
             {isRecording
               ? "Speak clearly — the waveform reacts in real time"
-              : "Tap record. Grunts, mumbles, and one-word texts all count."}
+              : idleHint}
           </p>
         )}
 
