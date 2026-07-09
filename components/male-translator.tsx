@@ -6,23 +6,14 @@ import {
   ArrowRight,
   Copy,
   Keyboard,
-  MessageSquareQuote,
   Mic,
   RefreshCw,
   Sparkles,
-  Waves,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { VoiceInputPanel } from "@/components/voice-input-panel"
@@ -67,7 +58,7 @@ export function MaleTranslator({
         toast.error("He said nothing. That's also data.", {
           description:
             inputMode === "voice"
-              ? "Tap the mic and say something first."
+              ? "Record a voice note first."
               : "Type something he mumbled, texted, or grunted first.",
         })
         return
@@ -112,69 +103,41 @@ export function MaleTranslator({
           : "Nuclear"
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-      <header className="space-y-5 text-center">
-        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur">
-          <Waves className="size-3.5 text-primary" aria-hidden />
-          <span>Now with voice decoding</span>
-        </div>
-
-        <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            {appName}
-          </h1>
-          <p className="mx-auto max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {tagline}
-          </p>
-        </div>
-
+    <div className="mx-auto flex w-full max-w-md flex-col gap-5">
+      <header className="space-y-3 px-1 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{appName}</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">{tagline}</p>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Badge variant="secondary" className="rounded-full px-3 py-1">
+          <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[11px]">
             Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
           </Badge>
           {gruntMode && (
-            <Badge variant="outline" className="rounded-full px-3 py-1">
-              Grunt mode ON
+            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px]">
+              Grunt mode
             </Badge>
           )}
-          <Badge variant="outline" className="rounded-full px-3 py-1 font-mono">
-            Peer-reviewed by zero men
-          </Badge>
         </div>
       </header>
 
-      <Tabs
-        value={inputMode}
-        onValueChange={(value) => setInputMode(value as InputMode)}
-        className="gap-0"
-      >
-        <Card className="overflow-hidden border-border/70 bg-card/90 shadow-sm backdrop-blur">
-          <CardHeader className="border-b border-border/60 bg-muted/20 pb-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-1.5">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <MessageSquareQuote className="size-5 text-primary" aria-hidden />
-                  Decode session
-                </CardTitle>
-                <CardDescription>
-                  Speak it or type it. We&apos;ll tell you what he actually meant.
-                </CardDescription>
-              </div>
+      <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
+        <Tabs
+          value={inputMode}
+          onValueChange={(value) => setInputMode(value as InputMode)}
+        >
+          <div className="border-b border-border/60 bg-muted/20 px-4 py-3">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="voice" className="gap-1.5">
+                <Mic className="size-4" aria-hidden />
+                Voice note
+              </TabsTrigger>
+              <TabsTrigger value="type" className="gap-1.5">
+                <Keyboard className="size-4" aria-hidden />
+                Type
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-              <TabsList className="grid w-full grid-cols-2 sm:w-auto">
-                <TabsTrigger value="voice" className="gap-1.5 px-4">
-                  <Mic className="size-4" aria-hidden />
-                  Voice
-                </TabsTrigger>
-                <TabsTrigger value="type" className="gap-1.5 px-4">
-                  <Keyboard className="size-4" aria-hidden />
-                  Type
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-6 pt-6">
+          <div className="space-y-5 px-4 py-5">
             <TabsContent value="voice" className="mt-0">
               <VoiceInputPanel
                 disabled={isTranslating}
@@ -195,62 +158,47 @@ export function MaleTranslator({
                   }
                 }}
                 rows={4}
-                className="min-h-28 resize-none rounded-2xl border-border/70 bg-background/80 text-base"
+                className="min-h-28 resize-none rounded-2xl border-border/70 bg-muted/20 text-base"
               />
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Quick samples
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {SAMPLE_PHRASES.map((phrase) => (
-                    <Button
-                      key={phrase}
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => handleSample(phrase)}
-                      disabled={isTranslating}
-                    >
-                      &ldquo;{phrase}&rdquo;
-                    </Button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {SAMPLE_PHRASES.map((phrase) => (
+                  <Button
+                    key={phrase}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => handleSample(phrase)}
+                    disabled={isTranslating}
+                  >
+                    &ldquo;{phrase}&rdquo;
+                  </Button>
+                ))}
               </div>
             </TabsContent>
 
-            <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-muted-foreground">
-                {isListening
-                  ? "Waveform is live — keep talking, then tap the mic to stop."
-                  : inputMode === "voice"
-                    ? "Stop recording, then translate when you're ready."
-                    : "Press ⌘ + Enter to translate quickly."}
-              </p>
-
-              <Button
-                onClick={handleSubmit}
-                disabled={isTranslating || isListening}
-                size="lg"
-                className="rounded-full px-6"
-              >
-                {isTranslating ? (
-                  <>
-                    <RefreshCw className="animate-spin" aria-hidden />
-                    Translating…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles aria-hidden />
-                    Translate
-                    <ArrowRight aria-hidden />
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </Tabs>
+            <Button
+              onClick={handleSubmit}
+              disabled={isTranslating || isListening}
+              className="h-11 w-full rounded-full"
+              size="lg"
+            >
+              {isTranslating ? (
+                <>
+                  <RefreshCw className="animate-spin" aria-hidden />
+                  Decoding…
+                </>
+              ) : (
+                <>
+                  <Sparkles aria-hidden />
+                  Translate voice note
+                  <ArrowRight aria-hidden />
+                </>
+              )}
+            </Button>
+          </div>
+        </Tabs>
+      </div>
 
       <AnimatePresence mode="wait">
         {isTranslating && (
@@ -259,16 +207,9 @@ export function MaleTranslator({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
+            className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-4 py-8 text-center"
           >
-            <Card className="border-dashed border-border/70 bg-muted/10">
-              <CardContent className="flex items-center justify-center gap-3 py-10">
-                <span className="relative flex size-2.5">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/40" />
-                  <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
-                </span>
-                <p className="text-sm text-muted-foreground">{loadingMessage}</p>
-              </CardContent>
-            </Card>
+            <p className="text-sm text-muted-foreground">{loadingMessage}</p>
           </motion.div>
         )}
 
@@ -278,93 +219,94 @@ export function MaleTranslator({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
+            className="space-y-3"
           >
-            <Card
-              className={cn(
-                "overflow-hidden border-2 shadow-sm",
-                result.isFallback
-                  ? "border-border bg-card"
-                  : "border-primary/25 bg-gradient-to-br from-primary/8 via-card to-card",
-              )}
-            >
-              <CardHeader className="border-b border-border/50 bg-background/40">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-1.5">
-                    <CardTitle className="text-xl">What he meant</CardTitle>
-                    <CardDescription>
-                      {result.isFallback
-                        ? "No exact match — still wildly overconfident"
-                        : "Decoded with scientifically dubious precision"}
-                    </CardDescription>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="rounded-full">
-                      {result.category === "mystery"
-                        ? "🔮 Mystery"
-                        : CATEGORY_LABELS[result.category]}
-                    </Badge>
-                    <Badge variant="secondary" className="rounded-full font-mono">
-                      {result.confidence}% confident
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
+            <div className="flex justify-start">
+              <div
+                className={cn(
+                  "max-w-[92%] rounded-3xl rounded-bl-md px-4 py-3 text-sm",
+                  "bg-muted text-muted-foreground",
+                )}
+              >
+                <p className="text-[11px] font-medium tracking-wide uppercase opacity-70">
+                  He said
+                </p>
+                <p className="mt-1">&ldquo;{result.input}&rdquo;</p>
+              </div>
+            </div>
 
-              <CardContent className="space-y-5 pt-6">
-                <div className="rounded-2xl border border-border/60 bg-background/70 px-5 py-4">
-                  <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Original
+            <div className="flex justify-end">
+              <div
+                className={cn(
+                  "max-w-[92%] rounded-3xl rounded-br-md px-4 py-4",
+                  result.isFallback
+                    ? "bg-muted text-foreground"
+                    : "bg-primary text-primary-foreground",
+                )}
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] font-medium tracking-wide uppercase opacity-70">
+                    What he meant
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    &ldquo;{result.input}&rdquo;
-                  </p>
+                  <Badge
+                    variant="secondary"
+                    className="h-5 rounded-full px-2 text-[10px]"
+                  >
+                    {result.category === "mystery"
+                      ? "🔮 Mystery"
+                      : CATEGORY_LABELS[result.category]}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="h-5 rounded-full px-2 font-mono text-[10px]"
+                  >
+                    {result.confidence}%
+                  </Badge>
                 </div>
 
-                <blockquote className="rounded-2xl border-l-4 border-primary bg-primary/5 px-5 py-4 text-lg leading-relaxed font-medium text-foreground">
+                <p className="text-base leading-relaxed font-medium">
                   &ldquo;{result.translation}&rdquo;
-                </blockquote>
+                </p>
 
                 {result.matchedPattern && (
-                  <p className="text-xs text-muted-foreground">
-                    Matched dialect pattern: &ldquo;{result.matchedPattern}&rdquo;
+                  <p className="mt-2 text-[11px] opacity-70">
+                    Matched: &ldquo;{result.matchedPattern}&rdquo;
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="rounded-full"
+                    className="h-8 rounded-full"
                     onClick={copyResult}
                   >
                     <Copy aria-hidden />
-                    Copy translation
+                    Copy
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="rounded-full"
+                    className="h-8 rounded-full"
                     onClick={() => {
                       setResult(null)
                       setInput("")
                       setVoiceInput("")
                     }}
                   >
-                    Clear & try again
+                    New note
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <footer className="space-y-2 text-center text-xs text-muted-foreground">
+      <footer className="px-2 text-center text-[11px] leading-relaxed text-muted-foreground">
         <p>
-          Not affiliated with any actual men. Results may vary. Side effects
-          include eye rolls and improved communication (unlikely).
+          Voice notes stay on your device. Not affiliated with any actual men.
         </p>
-        <p>Voice mode uses your mic locally — we&apos;re not uploading your relationship drama.</p>
       </footer>
     </div>
   )

@@ -10,21 +10,13 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="relative min-h-svh overflow-hidden px-4 py-10 sm:px-6 sm:py-16">
+    <main className="relative flex min-h-svh items-center justify-center px-4 py-8 sm:py-10">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.04),transparent_42%),linear-gradient(to_bottom,var(--background),color-mix(in_oklch,var(--muted),transparent_70%))]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-16 left-1/2 size-72 -translate-x-1/2 rounded-full bg-primary/5 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-0 bottom-0 size-80 translate-x-1/4 rounded-full bg-muted/60 blur-3xl"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--muted),transparent_55%)_0%,var(--background)_38%,var(--background)_100%)]"
       />
 
-      <div className="relative">
+      <div className="relative w-full max-w-md">
         <MaleTranslator
           appName={env.NEXT_PUBLIC_APP_NAME}
           tagline={env.NEXT_PUBLIC_APP_TAGLINE}
