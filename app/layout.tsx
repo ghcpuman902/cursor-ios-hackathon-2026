@@ -15,7 +15,8 @@ const fontMono = Geist_Mono({
 })
 
 export const viewport: Viewport = {
-  themeColor: "#171724",
+  themeColor: "#1d1c2d",
+  colorScheme: "dark",
   viewportFit: "cover",
 }
 

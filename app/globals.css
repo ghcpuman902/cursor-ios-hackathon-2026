@@ -48,8 +48,8 @@
 }
 
 :root {
-  --app-shell: #171724;
-  --app-shell-highlight: #252439;
+  --app-shell: #1d1c2d;
+  --app-shell-highlight: #1d1c2d;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -85,8 +85,8 @@
 }
 
 .dark {
-  --app-shell: #171724;
-  --app-shell-highlight: #252439;
+  --app-shell: #1d1c2d;
+  --app-shell-highlight: #1d1c2d;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
