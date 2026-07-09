@@ -191,6 +191,7 @@ export function MaleTranslator({
   const [input, setInput] = useState("")
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
+  const [isFetchingAiInsight, setIsFetchingAiInsight] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("")
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
@@ -221,6 +222,7 @@ export function MaleTranslator({
       }
 
       setIsTranslating(true)
+      setIsFetchingAiInsight(false)
       setLoadingMessage(
         gender === "female"
           ? getRandomFemaleLoadingMessage()
@@ -234,6 +236,10 @@ export function MaleTranslator({
         gender === "female"
           ? translateFemale(text, { sarcasmLevel, gruntMode })
           : translateMale(text, { sarcasmLevel, gruntMode })
+
+      setResult(dictionaryTranslation)
+      setIsTranslating(false)
+      setIsFetchingAiInsight(true)
 
       try {
         const response = await fetch("/api/translate", {
@@ -252,12 +258,26 @@ export function MaleTranslator({
           throw new Error("AI translation request failed.")
         }
 
-        const translation = (await response.json()) as TranslationResult
-        setResult(translation)
+        const enhanced = (await response.json()) as TranslationResult
+
+        setResult((current) => {
+          if (!current || current.input !== text) {
+            return current
+          }
+
+          if (!enhanced.aiInsight) {
+            return current
+          }
+
+          return {
+            ...current,
+            aiInsight: enhanced.aiInsight,
+          }
+        })
       } catch {
-        setResult(dictionaryTranslation)
+        // Dictionary reply is already visible.
       } finally {
-        setIsTranslating(false)
+        setIsFetchingAiInsight(false)
       }
     },
     [
@@ -503,6 +523,7 @@ export function MaleTranslator({
     setGender(nextGender)
     setInput("")
     setResult(null)
+    setIsFetchingAiInsight(false)
     clearScreenshot()
   }
 
@@ -868,6 +889,15 @@ export function MaleTranslator({
                     </div>
                   )}
 
+                  {isFetchingAiInsight && !result.aiInsight && (
+                    <div className="mt-3 border-t border-white/10 pt-3">
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <RefreshCw className="size-3.5 animate-spin" aria-hidden />
+                        Adding AI analysis…
+                      </p>
+                    </div>
+                  )}
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       size="sm"
@@ -898,6 +928,7 @@ export function MaleTranslator({
                       onClick={() => {
                         stopSpeechPlayback()
                         setResult(null)
+                        setIsFetchingAiInsight(false)
                         setInput("")
                         clearScreenshot()
                       }}

@@ -8,7 +8,7 @@ Link to Vercel **after** the GitHub repository exists. All steps below are optio
 2. **Add New Project** → Import your private GitHub repo.
 3. Framework preset: **Next.js** (auto-detected).
 4. Build command: `pnpm build` (default).
-5. Install command: `pnpm install`.
+5. Install command: `pnpm install --frozen-lockfile` (also set in `vercel.json`).
 6. Add environment variables from `.env.example` / your secrets.
 7. Deploy.
 
