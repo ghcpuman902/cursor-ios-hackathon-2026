@@ -1,15 +1,24 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { AnimatePresence, motion } from "motion/react"
+import Image from "next/image"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import {
   ArrowRight,
   Copy,
+  ImageUp,
   Keyboard,
   Mic,
   Play,
   RefreshCw,
   Sparkles,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -72,7 +81,98 @@ type MaleTranslatorProps = {
   translationDelayMs: number
 }
 
-type ViewMode = "voice" | "type"
+type ViewMode = "voice" | "type" | "screenshot"
+
+function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
+  const reduceMotion = useReducedMotion()
+  const isMale = gender === "male"
+
+  return (
+    <>
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[var(--app-shell)]"
+        aria-hidden
+      >
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={gender}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.7 }}
+          >
+            <motion.div
+              className={cn(
+                "absolute -top-28 -left-24 size-96 rounded-full blur-[90px]",
+                isMale ? "bg-blue-500/30" : "bg-fuchsia-500/28"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      x: [0, 34, -12, 0],
+                      y: [0, 22, 48, 0],
+                      scale: [1, 1.08, 0.96, 1],
+                    }
+              }
+              transition={{
+                duration: 14,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className={cn(
+                "absolute top-[28%] -right-32 size-[28rem] rounded-full blur-[110px]",
+                isMale ? "bg-cyan-400/22" : "bg-rose-400/24"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      x: [0, -46, 10, 0],
+                      y: [0, 42, -18, 0],
+                      scale: [1, 0.94, 1.07, 1],
+                    }
+              }
+              transition={{
+                duration: 17,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className={cn(
+                "absolute -bottom-40 left-[18%] size-[30rem] rounded-full blur-[120px]",
+                isMale ? "bg-violet-500/24" : "bg-amber-400/18"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : { x: [0, 54, -24, 0], y: [0, -28, 8, 0] }
+              }
+              transition={{
+                duration: 19,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-[1] h-2 bg-[var(--app-shell)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-2 bg-[var(--app-shell)]"
+        aria-hidden
+      />
+    </>
+  )
+}
 
 export function MaleTranslator({
   appName: appNameProp,
@@ -94,9 +194,23 @@ export function MaleTranslator({
   const [isTranslating, setIsTranslating] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("")
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<
+    string | null
+  >(null)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const speechUrlRef = useRef<string | null>(null)
+  const screenshotInputRef = useRef<HTMLInputElement | null>(null)
+  const screenshotUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (screenshotUrlRef.current) {
+        URL.revokeObjectURL(screenshotUrlRef.current)
+      }
+    }
+  }, [])
 
   const translate = useCallback(
     async (text: string) => {
@@ -246,6 +360,84 @@ export function MaleTranslator({
     void translate(phrase)
   }
 
+  const clearScreenshot = useCallback(() => {
+    if (screenshotUrlRef.current) {
+      URL.revokeObjectURL(screenshotUrlRef.current)
+      screenshotUrlRef.current = null
+    }
+
+    if (screenshotInputRef.current) {
+      screenshotInputRef.current.value = ""
+    }
+
+    setScreenshotFile(null)
+    setScreenshotPreviewUrl(null)
+  }, [])
+
+  const handleScreenshotChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    const isSupportedType = ["image/jpeg", "image/png", "image/webp"].includes(
+      file.type
+    )
+
+    if (!isSupportedType || file.size > 10 * 1024 * 1024) {
+      event.target.value = ""
+      toast.error("Choose a PNG, JPEG, or WebP screenshot up to 10 MB.")
+      return
+    }
+
+    clearScreenshot()
+    const previewUrl = URL.createObjectURL(file)
+    screenshotUrlRef.current = previewUrl
+    setScreenshotFile(file)
+    setScreenshotPreviewUrl(previewUrl)
+    setResult(null)
+  }
+
+  const handleAnalyzeScreenshot = async () => {
+    if (!screenshotFile) {
+      toast.error("Choose a conversation screenshot first.")
+      return
+    }
+
+    setIsTranslating(true)
+    setLoadingMessage("Reading both sides of the conversation…")
+    setResult(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("screenshot", screenshotFile)
+      formData.append("gender", gender)
+      formData.append("sarcasmLevel", String(sarcasmLevel))
+      formData.append("gruntMode", String(gruntMode))
+
+      const response = await fetch("/api/analyze-screenshot", {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(45_000),
+      })
+      const data = (await response.json()) as TranslationResult & {
+        error?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Screenshot analysis failed.")
+      }
+
+      setInput(data.input)
+      setResult(data)
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Screenshot analysis failed."
+      toast.error("Could not read that screenshot.", { description: message })
+    } finally {
+      setIsTranslating(false)
+    }
+  }
+
   const stopSpeechPlayback = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause()
@@ -312,6 +504,7 @@ export function MaleTranslator({
     setGender(nextGender)
     setInput("")
     setResult(null)
+    clearScreenshot()
   }
 
   const sarcasmLabel =
@@ -328,277 +521,389 @@ export function MaleTranslator({
   const isBusy = isTranslating || isRecorderBusy
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-      <header className="space-y-4 text-center">
-        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/50 uppercase">
-          <span className="size-1.5 rounded-full bg-white/50" />
-          Live decode
-        </div>
+    <>
+      <DynamicGenderBackground gender={gender} />
 
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            {appName}
-          </h1>
-          <p className="mx-auto max-w-xs text-sm leading-relaxed text-white/50">
-            {tagline}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Badge className="rounded-full border-white/10 bg-white/10 text-white/80 backdrop-blur-sm hover:bg-white/10">
-            Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
-          </Badge>
-          {gruntMode && (
-            <Badge
-              variant="outline"
-              className="rounded-full border-white/15 bg-transparent text-white/60"
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col gap-6">
+        <header className="relative space-y-5 pt-12 text-center sm:pt-10">
+          <div className="absolute top-0 right-0 flex items-center gap-2">
+            <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
+              I&apos;m into
+            </span>
+            <div
+              className="flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
+              role="tablist"
+              aria-label="Who I am into"
             >
-              Grunt mode
-            </Badge>
-          )}
-        </div>
-      </header>
-
-      <div
-        className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md"
-        role="tablist"
-        aria-label="Translator mode"
-      >
-        {(["male", "female"] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            role="tab"
-            aria-selected={gender === mode}
-            onClick={() => handleGenderChange(mode)}
-            disabled={isBusy}
-            className={cn(
-              "flex flex-1 items-center justify-center rounded-full py-2 text-sm font-medium transition-all",
-              gender === mode
-                ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                : "text-white/45 hover:text-white/70"
-            )}
-          >
-            {mode === "male" ? "Male" : "Female"}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md">
-        {(["voice", "type"] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setViewMode(mode)}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-all",
-              viewMode === mode
-                ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                : "text-white/45 hover:text-white/70"
-            )}
-          >
-            {mode === "voice" ? (
-              <Mic className="size-3.5" aria-hidden />
-            ) : (
-              <Keyboard className="size-3.5" aria-hidden />
-            )}
-            {mode === "voice" ? "Voice" : "Type"}
-          </button>
-        ))}
-      </div>
-
-      {viewMode === "voice" ? (
-        <div className="space-y-4">
-          {isMicSupported ? (
-            <VoiceNoteRecorder
-              status={recorderStatus}
-              durationMs={durationMs}
-              waveformHistory={waveformHistory}
-              liveLevels={liveLevels}
-              transcript={input}
-              recordPrompt={genderConfig.recordPrompt}
-              idleHint={genderConfig.idleHint}
-              disabled={isBusy && recorderStatus !== "recording"}
-              onToggleRecording={() => void handleToggleRecording()}
-              onSwitchToType={() => setViewMode("type")}
-            />
-          ) : (
-            <GlassPanel className="px-5 py-10 text-center">
-              <p className="text-sm text-white/70">
-                Voice notes need a mic-friendly browser.
-              </p>
-              <Button
-                size="sm"
-                className="mt-4 rounded-full border-0 bg-white/15 text-white hover:bg-white/25"
-                onClick={() => setViewMode("type")}
-              >
-                Switch to typing
-              </Button>
-            </GlassPanel>
-          )}
-
-          {input.trim() && recorderStatus === "idle" && !isTranslating && (
-            <Button
-              onClick={handleSubmit}
-              disabled={isBusy}
-              className="h-12 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
-              size="lg"
-            >
-              <Sparkles aria-hidden />
-              Translate
-              <ArrowRight aria-hidden />
-            </Button>
-          )}
-        </div>
-      ) : (
-        <GlassPanel className="space-y-4 p-5">
-          <p className="text-sm font-medium text-white/80">
-            {genderConfig.typeLabel}
-          </p>
-
-          <Textarea
-            placeholder={genderConfig.typePlaceholder}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            rows={4}
-            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white backdrop-blur-sm placeholder:text-white/30 focus-visible:border-white/25 focus-visible:ring-white/10"
-            disabled={isBusy}
-          />
-
-          <div className="flex flex-wrap gap-2">
-            {genderConfig.samplePhrases.map((phrase) => (
-              <Button
-                key={phrase}
-                variant="outline"
-                size="sm"
-                className="rounded-full border-white/10 bg-white/5 text-white/70 backdrop-blur-sm hover:bg-white/10 hover:text-white"
-                onClick={() => handleSample(phrase)}
-                disabled={isBusy}
-              >
-                &ldquo;{phrase}&rdquo;
-              </Button>
-            ))}
+              {(["male", "female"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={gender === mode}
+                  onClick={() => handleGenderChange(mode)}
+                  disabled={isBusy}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[11px] font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:px-3",
+                    gender === mode
+                      ? "bg-white/16 text-white shadow-sm"
+                      : "text-white/45 hover:bg-white/8 hover:text-white/75"
+                  )}
+                >
+                  {mode === "male" ? "Men" : "Women"}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={isBusy}
-            className="h-11 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
-          >
-            <Sparkles aria-hidden />
-            Translate
-            <ArrowRight aria-hidden />
-          </Button>
-        </GlassPanel>
-      )}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              {appName}
+            </h1>
+            <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
+              {tagline}
+            </p>
+          </div>
 
-      <AnimatePresence mode="wait">
-        {(isTranslating || recorderStatus === "processing") && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <GlassPanel variant="subtle" className="px-4 py-8 text-center">
-              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-white/70" />
-              <p className="text-sm text-white/50">{loadingMessage}</p>
-            </GlassPanel>
-          </motion.div>
-        )}
-
-        {result && !isTranslating && recorderStatus !== "processing" && (
-          <motion.div
-            key="result"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="space-y-3"
-          >
-            <div className="flex justify-start">
-              <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/80 backdrop-blur-xl">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-white/40 uppercase">
-                  {genderConfig.subjectLabel}
-                </p>
-                <p className="mt-1 text-white/90">
-                  &ldquo;{result.input}&rdquo;
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <GlassPanel
-                variant="strong"
-                className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Badge className="rounded-full border-white/12 bg-white/[0.08] text-white/75 shadow-sm backdrop-blur-xl hover:bg-white/[0.08]">
+              Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
+            </Badge>
+            {gruntMode && (
+              <Badge
+                variant="outline"
+                className="rounded-full border-white/12 bg-white/[0.06] text-white/60 backdrop-blur-xl"
               >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-white/45 uppercase">
-                    Translation
-                  </p>
-                  <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 text-[10px] text-white/80">
-                    {result.category === "mystery"
-                      ? "🔮 Mystery"
-                      : CATEGORY_LABELS[result.category]}
-                  </Badge>
-                  <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 font-mono text-[10px] text-white/80">
-                    {result.confidence}%
-                  </Badge>
-                </div>
+                Grunt mode
+              </Badge>
+            )}
+          </div>
+        </header>
 
-                <p className="text-base leading-relaxed font-medium text-white">
-                  &ldquo;{result.translation}&rdquo;
-                </p>
+        <div
+          className="grid grid-cols-3 rounded-full border border-white/12 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+          role="tablist"
+          aria-label="Input method"
+        >
+          {(["voice", "type", "screenshot"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === mode}
+              onClick={() => setViewMode(mode)}
+              disabled={isRecorderBusy}
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50",
+                viewMode === mode
+                  ? "bg-white/16 text-white shadow-sm"
+                  : "text-white/45 hover:bg-white/[0.06] hover:text-white/75"
+              )}
+            >
+              {mode === "voice" ? (
+                <Mic className="size-4" aria-hidden />
+              ) : mode === "type" ? (
+                <Keyboard className="size-4" aria-hidden />
+              ) : (
+                <ImageUp className="size-4" aria-hidden />
+              )}
+              {mode === "voice"
+                ? "Voice"
+                : mode === "type"
+                  ? "Type"
+                  : "Screenshot"}
+            </button>
+          ))}
+        </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    className="h-8 rounded-full border-white/10 bg-white/10 text-white hover:bg-white/20"
-                    onClick={handleSpeakTranslation}
-                    disabled={isSpeaking}
-                  >
-                    {isSpeaking ? (
-                      <RefreshCw className="animate-spin" aria-hidden />
-                    ) : (
-                      <Play aria-hidden />
+        <GlassPanel variant="strong" className="overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={viewMode}
+              role="tabpanel"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+            >
+              {viewMode === "voice" ? (
+                <div>
+                  {isMicSupported ? (
+                    <VoiceNoteRecorder
+                      status={recorderStatus}
+                      durationMs={durationMs}
+                      waveformHistory={waveformHistory}
+                      liveLevels={liveLevels}
+                      transcript={input}
+                      recordPrompt={genderConfig.recordPrompt}
+                      idleHint={genderConfig.idleHint}
+                      disabled={isBusy && recorderStatus !== "recording"}
+                      onToggleRecording={() => void handleToggleRecording()}
+                    />
+                  ) : (
+                    <div className="px-5 py-10 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Voice notes need a mic-friendly browser.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="mt-4 rounded-full"
+                        onClick={() => setViewMode("type")}
+                      >
+                        Switch to typing
+                      </Button>
+                    </div>
+                  )}
+
+                  {input.trim() &&
+                    recorderStatus === "idle" &&
+                    !isTranslating && (
+                      <div className="border-t border-border/60 p-5">
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={isBusy}
+                          className="h-12 w-full rounded-full"
+                          size="lg"
+                        >
+                          <Sparkles aria-hidden />
+                          Translate
+                          <ArrowRight aria-hidden />
+                        </Button>
+                      </div>
                     )}
-                    Play
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-8 rounded-full border-white/10 bg-white/10 text-white hover:bg-white/20"
-                    onClick={copyResult}
-                  >
-                    <Copy aria-hidden />
-                    Copy
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 rounded-full text-white/60 hover:bg-white/10 hover:text-white"
-                    onClick={() => {
-                      stopSpeechPlayback()
-                      setResult(null)
-                      setInput("")
+                </div>
+              ) : viewMode === "type" ? (
+                <div className="space-y-4 p-5">
+                  <p className="text-sm font-medium text-foreground/80">
+                    {genderConfig.typeLabel}
+                  </p>
+
+                  <Textarea
+                    aria-label={genderConfig.typeLabel}
+                    placeholder={genderConfig.typePlaceholder}
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "Enter" &&
+                        (event.metaKey || event.ctrlKey)
+                      ) {
+                        event.preventDefault()
+                        handleSubmit()
+                      }
                     }}
+                    rows={4}
+                    className="min-h-32 resize-none rounded-2xl border-white/12 bg-white/[0.06] text-foreground placeholder:text-muted-foreground/65 focus-visible:border-white/25 focus-visible:ring-white/10"
+                    disabled={isBusy}
+                  />
+
+                  <div className="flex flex-wrap gap-2">
+                    {genderConfig.samplePhrases.map((phrase) => (
+                      <Button
+                        key={phrase}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full border-white/12 bg-white/[0.06] text-white/70 hover:bg-white/12 hover:text-white"
+                        onClick={() => handleSample(phrase)}
+                        disabled={isBusy}
+                      >
+                        &ldquo;{phrase}&rdquo;
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isBusy}
+                    className="h-11 w-full rounded-full"
                   >
-                    New
+                    <Sparkles aria-hidden />
+                    Translate
+                    <ArrowRight aria-hidden />
                   </Button>
                 </div>
-              </GlassPanel>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              ) : (
+                <div className="space-y-5 p-5">
+                  <div>
+                    <p className="text-sm font-medium text-foreground/80">
+                      Upload a two-sided conversation
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      We&apos;ll separate your messages from theirs, then run
+                      the same dictionary-first analysis.
+                    </p>
+                  </div>
 
-      <footer className="text-center text-[11px] text-white/30">
-        Voice notes stay on your device until transcribed.
-      </footer>
-    </div>
+                  {screenshotPreviewUrl ? (
+                    <div className="relative overflow-hidden rounded-2xl border border-white/12 bg-black/20">
+                      <Image
+                        src={screenshotPreviewUrl}
+                        alt="Selected conversation screenshot"
+                        width={900}
+                        height={1600}
+                        unoptimized
+                        className="max-h-80 w-full object-contain"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon-sm"
+                        className="absolute top-2 right-2 rounded-full bg-black/55 text-white hover:bg-black/70"
+                        onClick={clearScreenshot}
+                        disabled={isBusy}
+                        aria-label="Remove screenshot"
+                      >
+                        <X aria-hidden />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="conversation-screenshot"
+                      className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/[0.05] px-6 text-center transition-colors focus-within:border-white/30 focus-within:ring-2 focus-within:ring-white/15 hover:border-white/30 hover:bg-white/[0.08]"
+                    >
+                      <span className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white/80">
+                        <ImageUp className="size-5" aria-hidden />
+                      </span>
+                      <span className="mt-4 text-sm font-medium text-white/85">
+                        Choose screenshot
+                      </span>
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        PNG, JPEG, or WebP · 10 MB max
+                      </span>
+                    </label>
+                  )}
+
+                  <input
+                    ref={screenshotInputRef}
+                    id="conversation-screenshot"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={handleScreenshotChange}
+                    disabled={isBusy}
+                  />
+
+                  <Button
+                    onClick={() => void handleAnalyzeScreenshot()}
+                    disabled={isBusy || !screenshotFile}
+                    className="h-11 w-full rounded-full"
+                  >
+                    <Sparkles aria-hidden />
+                    Analyze conversation
+                    <ArrowRight aria-hidden />
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </GlassPanel>
+
+        <AnimatePresence mode="wait">
+          {(isTranslating || recorderStatus === "processing") && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+            >
+              <GlassPanel variant="subtle" className="px-4 py-8 text-center">
+                <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
+                <p className="text-sm text-muted-foreground">
+                  {loadingMessage}
+                </p>
+              </GlassPanel>
+            </motion.div>
+          )}
+
+          {result && !isTranslating && recorderStatus !== "processing" && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              <div className="flex justify-start">
+                <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/12 bg-white/[0.08] px-4 py-3 text-sm text-foreground/80 shadow-sm backdrop-blur-xl">
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    {genderConfig.subjectLabel}
+                  </p>
+                  <p className="mt-1 text-foreground/90">
+                    &ldquo;{result.input}&rdquo;
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <GlassPanel
+                  variant="strong"
+                  className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
+                >
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                      Translation
+                    </p>
+                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
+                      {result.category === "mystery"
+                        ? "🔮 Mystery"
+                        : CATEGORY_LABELS[result.category]}
+                    </Badge>
+                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 font-mono text-[10px] text-secondary-foreground hover:bg-secondary">
+                      {result.confidence}%
+                    </Badge>
+                  </div>
+
+                  <p className="text-base leading-relaxed font-medium text-foreground">
+                    &ldquo;{result.translation}&rdquo;
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-full"
+                      onClick={handleSpeakTranslation}
+                      disabled={isSpeaking}
+                    >
+                      {isSpeaking ? (
+                        <RefreshCw className="animate-spin" aria-hidden />
+                      ) : (
+                        <Play aria-hidden />
+                      )}
+                      Play
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 rounded-full"
+                      onClick={copyResult}
+                    >
+                      <Copy aria-hidden />
+                      Copy
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 rounded-full text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        stopSpeechPlayback()
+                        setResult(null)
+                        setInput("")
+                        clearScreenshot()
+                      }}
+                    >
+                      New
+                    </Button>
+                  </div>
+                </GlassPanel>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <footer className="text-center text-[11px] text-muted-foreground/80">
+          Voice notes stay on your device until transcribed.
+        </footer>
+      </div>
+    </>
   )
 }

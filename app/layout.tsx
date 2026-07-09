@@ -15,7 +15,8 @@ const fontMono = Geist_Mono({
 })
 
 export const viewport: Viewport = {
-  themeColor: "#0e0e10",
+  themeColor: "#1d1c2d",
+  colorScheme: "dark",
   viewportFit: "cover",
 }
 
@@ -32,7 +33,7 @@ export default function RootLayout({
         "dark antialiased",
         fontMono.variable,
         "font-sans",
-        geist.variable,
+        geist.variable
       )}
     >
       <body className="app-shell-bg">

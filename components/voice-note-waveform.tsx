@@ -13,7 +13,11 @@ type VoiceNoteWaveformProps = {
   className?: string
 }
 
-function buildBars(samples: number[], liveLevels: number[], isRecording: boolean) {
+function buildBars(
+  samples: number[],
+  liveLevels: number[],
+  isRecording: boolean
+) {
   if (isRecording && liveLevels.length > 0) {
     const tail = samples.slice(-Math.floor(DISPLAY_BARS * 0.55))
     const live = liveLevels.slice(-Math.ceil(DISPLAY_BARS * 0.45))
@@ -46,7 +50,7 @@ export function VoiceNoteWaveform({
       aria-hidden
       className={cn(
         "flex h-20 w-full items-end justify-center gap-[2px] px-1 sm:h-24 sm:gap-[3px]",
-        className,
+        className
       )}
     >
       {bars.map((level, index) => (
@@ -79,9 +83,9 @@ function WaveformBar({
     "w-[3px] rounded-full sm:w-1",
     isRecording
       ? isRecent
-        ? "bg-white/90"
-        : "bg-white/35"
-      : "bg-white/25",
+        ? "bg-primary/85"
+        : "bg-primary/35"
+      : "bg-primary/20"
   )
 
   if (reduceMotion) {
@@ -92,7 +96,10 @@ function WaveformBar({
     <motion.span
       className={barClass}
       initial={false}
-      animate={{ height: heightPx, opacity: isRecording && isRecent ? 1 : 0.85 }}
+      animate={{
+        height: heightPx,
+        opacity: isRecording && isRecent ? 1 : 0.85,
+      }}
       transition={{
         type: "spring",
         stiffness: 520,
