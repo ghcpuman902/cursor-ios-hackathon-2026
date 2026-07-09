@@ -50,7 +50,7 @@ export const enhanceTranslation = async (
       memeIntensity,
       context: context ?? null,
     }),
-    maxOutputTokens: 100,
+    maxOutputTokens: 400,
     abortSignal: AbortSignal.timeout(15_000),
     providerOptions: {
       gateway: {
