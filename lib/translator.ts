@@ -2,6 +2,7 @@ import {
   FALLBACK_TRANSLATIONS,
   FEMALE_FALLBACK_TRANSLATIONS,
   FEMALE_LOADING_MESSAGES,
+  FEMALE_LONG_INPUT_TRANSLATIONS,
   FEMALE_TRANSLATIONS,
   GRUNT_ANNOTATIONS,
   LOADING_MESSAGES,
@@ -37,6 +38,15 @@ const normalizeInput = (text: string): string => {
 const pickRandom = <T>(items: readonly T[]): T => {
   return items[Math.floor(Math.random() * items.length)]!
 }
+
+const countWords = (text: string): number => {
+  const trimmed = text.trim()
+  if (!trimmed) return 0
+  return trimmed.split(/\s+/).length
+}
+
+/** She talked forever — decode to 1–3 words max */
+const FEMALE_LONG_INPUT_WORD_THRESHOLD = 12
 
 const maybeAddGrunt = (text: string, gruntMode: boolean): string => {
   if (!gruntMode) return text
@@ -117,10 +127,27 @@ export const translateFemale = (
   input: string,
   options: TranslationOptions
 ): TranslationResult => {
-  return translateFromDictionary(input, options, {
+  const wordCount = countWords(input)
+  const isLongInput = wordCount >= FEMALE_LONG_INPUT_WORD_THRESHOLD
+  const fallbackPool = isLongInput
+    ? FEMALE_LONG_INPUT_TRANSLATIONS
+    : FEMALE_FALLBACK_TRANSLATIONS
+
+  const result = translateFromDictionary(
+    input,
+    { ...options, gruntMode: false },
+    {
     entries: FEMALE_TRANSLATIONS,
-    fallbackTranslations: FEMALE_FALLBACK_TRANSLATIONS,
-    emptyTranslation:
-      "… *[silence]* … (She said nothing. Ask whether she wants to talk.)",
+    fallbackTranslations: fallbackPool,
+    emptyTranslation: "…",
   })
+
+  if (result.isFallback && isLongInput) {
+    return {
+      ...result,
+      confidence: Math.min(220, 140 + Math.floor(wordCount / 3)),
+    }
+  }
+
+  return result
 }
