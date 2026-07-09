@@ -1,7 +1,15 @@
-import { createOpenAI } from "@ai-sdk/openai"
+import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai"
 
-import { serverEnv } from "@/lib/server-env"
+import { getServerEnv } from "@/lib/server-env"
 
-export const openai = createOpenAI({
-  apiKey: serverEnv.OPENAI_API_KEY,
-})
+let cachedOpenAI: OpenAIProvider | null = null
+
+export const getOpenAI = (): OpenAIProvider => {
+  if (!cachedOpenAI) {
+    cachedOpenAI = createOpenAI({
+      apiKey: getServerEnv().OPENAI_API_KEY,
+    })
+  }
+
+  return cachedOpenAI
+}

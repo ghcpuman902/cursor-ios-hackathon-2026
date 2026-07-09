@@ -11,6 +11,12 @@ importers:
       '@ai-sdk/openai':
         specifier: ^4.0.9
         version: 4.0.9(zod@4.4.3)
+      '@ai-sdk/provider':
+        specifier: ^4.0.2
+        version: 4.0.2
+      '@ai-sdk/provider-utils':
+        specifier: ^5.0.6
+        version: 5.0.6(zod@4.4.3)
       '@base-ui/react':
         specifier: ^1.6.0
         version: 1.6.0(@date-fns/tz@1.5.0)(@types/react@19.2.17)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
