@@ -1,8 +1,8 @@
 import { transcribe } from "ai"
 import { NextResponse } from "next/server"
 
-import { openai } from "@/lib/ai"
-import { serverEnv } from "@/lib/server-env"
+import { getOpenAI } from "@/lib/ai"
+import { getServerEnv } from "@/lib/server-env"
 
 export const runtime = "nodejs"
 
@@ -10,6 +10,13 @@ const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "Voice transcription is not configured. Add OPENAI_API_KEY." },
+        { status: 503 },
+      )
+    }
+
     const formData = await request.formData()
     const audio = formData.get("audio")
 
@@ -34,7 +41,7 @@ export async function POST(request: Request) {
     const audioBuffer = Buffer.from(await audio.arrayBuffer())
 
     const transcript = await transcribe({
-      model: openai.transcription(serverEnv.OPENAI_TRANSCRIPTION_MODEL),
+      model: getOpenAI().transcription(getServerEnv().OPENAI_TRANSCRIPTION_MODEL),
       audio: audioBuffer,
       abortSignal: AbortSignal.timeout(30_000),
     })

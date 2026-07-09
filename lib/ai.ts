@@ -1,7 +1,9 @@
 import { createOpenAI } from "@ai-sdk/openai"
 
-import { serverEnv } from "@/lib/server-env"
+import { getServerEnv } from "@/lib/server-env"
 
-export const openai = createOpenAI({
-  apiKey: serverEnv.OPENAI_API_KEY,
-})
+export function getOpenAI() {
+  return createOpenAI({
+    apiKey: getServerEnv().OPENAI_API_KEY,
+  })
+}
