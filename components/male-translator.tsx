@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react"
 import {
   ArrowRight,
   Copy,
+  Keyboard,
   Mic,
   Play,
   RefreshCw,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { GlassPanel } from "@/components/glass-panel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -229,18 +231,59 @@ export function MaleTranslator({
   const isBusy = isTranslating || isRecorderBusy
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-5">
-      <header className="space-y-2 px-1 text-center">
-        <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-zinc-950 px-3 py-1 text-[11px] font-medium tracking-wide text-white">
-          <Mic className="size-3" aria-hidden />
-          Voice note mode
+    <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+      <header className="space-y-4 text-center">
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/60 uppercase backdrop-blur-md">
+          <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+          Live decode
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">{appName}</h1>
-        <p className="text-sm text-muted-foreground">{tagline}</p>
-        <Badge variant="secondary" className="rounded-full">
-          Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
-        </Badge>
+
+        <div className="space-y-2">
+          <h1 className="text-gradient-brand text-3xl font-semibold tracking-tight sm:text-4xl">
+            {appName}
+          </h1>
+          <p className="mx-auto max-w-xs text-sm leading-relaxed text-white/50">
+            {tagline}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Badge className="rounded-full border-white/10 bg-white/10 text-white/80 backdrop-blur-sm hover:bg-white/10">
+            Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
+          </Badge>
+          {gruntMode && (
+            <Badge
+              variant="outline"
+              className="rounded-full border-white/15 bg-transparent text-white/60"
+            >
+              Grunt mode
+            </Badge>
+          )}
+        </div>
       </header>
+
+      <div className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md">
+        {(["voice", "type"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setViewMode(mode)}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-medium transition-all",
+              viewMode === mode
+                ? "bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                : "text-white/45 hover:text-white/70",
+            )}
+          >
+            {mode === "voice" ? (
+              <Mic className="size-3.5" aria-hidden />
+            ) : (
+              <Keyboard className="size-3.5" aria-hidden />
+            )}
+            {mode === "voice" ? "Voice" : "Type"}
+          </button>
+        ))}
+      </div>
 
       {viewMode === "voice" ? (
         <div className="space-y-4">
@@ -256,46 +299,36 @@ export function MaleTranslator({
               onSwitchToType={() => setViewMode("type")}
             />
           ) : (
-            <div className="rounded-[1.75rem] bg-zinc-950 px-5 py-10 text-center text-white">
-              <p className="text-sm">Voice notes need a mic-friendly browser.</p>
+            <GlassPanel className="px-5 py-10 text-center">
+              <p className="text-sm text-white/70">
+                Voice notes need a mic-friendly browser.
+              </p>
               <Button
-                variant="secondary"
                 size="sm"
-                className="mt-4 rounded-full"
+                className="mt-4 rounded-full border-0 bg-white/15 text-white hover:bg-white/25"
                 onClick={() => setViewMode("type")}
               >
                 Switch to typing
               </Button>
-            </div>
+            </GlassPanel>
           )}
 
           {input.trim() && recorderStatus === "idle" && !isTranslating && (
             <Button
               onClick={handleSubmit}
               disabled={isBusy}
-              className="h-12 w-full rounded-full"
+              className="h-12 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-[0_0_30px_rgba(139,92,246,0.35)] hover:from-violet-500 hover:to-cyan-400"
               size="lg"
             >
               <Sparkles aria-hidden />
-              Translate voice note
+              Translate
               <ArrowRight aria-hidden />
             </Button>
           )}
         </div>
       ) : (
-        <div className="space-y-4 rounded-[1.75rem] border border-border/70 bg-card p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Type what he said</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full"
-              onClick={() => setViewMode("voice")}
-            >
-              <Mic className="size-4" aria-hidden />
-              Voice
-            </Button>
-          </div>
+        <GlassPanel className="space-y-4 p-5">
+          <p className="text-sm font-medium text-white/80">Type what he said</p>
 
           <Textarea
             placeholder={`e.g. "I'm fine", "k", "do whatever you want"`}
@@ -308,7 +341,7 @@ export function MaleTranslator({
               }
             }}
             rows={4}
-            className="min-h-28 resize-none rounded-2xl"
+            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-violet-400/50 focus-visible:ring-violet-400/20"
             disabled={isBusy}
           />
 
@@ -318,7 +351,7 @@ export function MaleTranslator({
                 key={phrase}
                 variant="outline"
                 size="sm"
-                className="rounded-full"
+                className="rounded-full border-white/10 bg-white/5 text-white/70 backdrop-blur-sm hover:bg-white/10 hover:text-white"
                 onClick={() => handleSample(phrase)}
                 disabled={isBusy}
               >
@@ -330,13 +363,13 @@ export function MaleTranslator({
           <Button
             onClick={handleSubmit}
             disabled={isBusy}
-            className="h-11 w-full rounded-full"
+            className="h-11 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white hover:from-violet-500 hover:to-cyan-400"
           >
             <Sparkles aria-hidden />
             Translate
             <ArrowRight aria-hidden />
           </Button>
-        </div>
+        </GlassPanel>
       )}
 
       <AnimatePresence mode="wait">
@@ -346,9 +379,11 @@ export function MaleTranslator({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-4 py-8 text-center"
           >
-            <p className="text-sm text-muted-foreground">{loadingMessage}</p>
+            <GlassPanel variant="subtle" className="px-4 py-8 text-center">
+              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-violet-400" />
+              <p className="text-sm text-white/50">{loadingMessage}</p>
+            </GlassPanel>
           </motion.div>
         )}
 
@@ -361,46 +396,41 @@ export function MaleTranslator({
             className="space-y-3"
           >
             <div className="flex justify-start">
-              <div className="max-w-[88%] rounded-3xl rounded-bl-md bg-zinc-200 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
-                <p className="text-[10px] font-medium tracking-wide uppercase opacity-60">
-                  His voice note
+              <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/80 backdrop-blur-xl">
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-white/40 uppercase">
+                  He said
                 </p>
-                <p className="mt-1">&ldquo;{result.input}&rdquo;</p>
+                <p className="mt-1 text-white/90">&ldquo;{result.input}&rdquo;</p>
               </div>
             </div>
 
             <div className="flex justify-end">
-              <div
-                className={cn(
-                  "max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm",
-                  result.isFallback
-                    ? "bg-zinc-800 text-white"
-                    : "bg-blue-600 text-white",
-                )}
+              <GlassPanel
+                variant="strong"
+                className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] font-medium tracking-wide uppercase opacity-70">
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-violet-300/80 uppercase">
                     Translation
                   </p>
-                  <Badge className="h-5 rounded-full bg-white/15 px-2 text-[10px] text-white">
+                  <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 text-[10px] text-white/80">
                     {result.category === "mystery"
                       ? "🔮 Mystery"
                       : CATEGORY_LABELS[result.category]}
                   </Badge>
-                  <Badge className="h-5 rounded-full bg-white/15 px-2 font-mono text-[10px] text-white">
+                  <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 font-mono text-[10px] text-white/80">
                     {result.confidence}%
                   </Badge>
                 </div>
 
-                <p className="text-base leading-relaxed font-medium">
+                <p className="text-base leading-relaxed font-medium text-white">
                   &ldquo;{result.translation}&rdquo;
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     size="sm"
-                    variant="secondary"
-                    className="h-8 rounded-full bg-white/15 text-white hover:bg-white/25"
+                    className="h-8 rounded-full border-white/10 bg-white/10 text-white hover:bg-white/20"
                     onClick={handleSpeakTranslation}
                     disabled={isSpeaking}
                   >
@@ -413,8 +443,7 @@ export function MaleTranslator({
                   </Button>
                   <Button
                     size="sm"
-                    variant="secondary"
-                    className="h-8 rounded-full bg-white/15 text-white hover:bg-white/25"
+                    className="h-8 rounded-full border-white/10 bg-white/10 text-white hover:bg-white/20"
                     onClick={copyResult}
                   >
                     <Copy aria-hidden />
@@ -423,23 +452,23 @@ export function MaleTranslator({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+                    className="h-8 rounded-full text-white/60 hover:bg-white/10 hover:text-white"
                     onClick={() => {
                       stopSpeechPlayback()
                       setResult(null)
                       setInput("")
                     }}
                   >
-                    New note
+                    New
                   </Button>
                 </div>
-              </div>
+              </GlassPanel>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <footer className="text-center text-[11px] text-muted-foreground">
+      <footer className="text-center text-[11px] text-white/30">
         Voice notes stay on your device until transcribed.
       </footer>
     </div>

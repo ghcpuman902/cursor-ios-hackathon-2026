@@ -11,7 +11,6 @@ type VoiceNoteWaveformProps = {
   liveLevels?: number[]
   isRecording: boolean
   className?: string
-  variant?: "light" | "dark"
 }
 
 function buildBars(samples: number[], liveLevels: number[], isRecording: boolean) {
@@ -38,11 +37,9 @@ export function VoiceNoteWaveform({
   liveLevels = [],
   isRecording,
   className,
-  variant = "dark",
 }: VoiceNoteWaveformProps) {
   const reduceMotion = useReducedMotion()
   const bars = buildBars(samples, liveLevels, isRecording)
-  const isDark = variant === "dark"
 
   return (
     <div
@@ -58,7 +55,6 @@ export function VoiceNoteWaveform({
           level={level}
           isRecording={isRecording}
           reduceMotion={reduceMotion}
-          isDark={isDark}
           isRecent={index >= bars.length - 6}
         />
       ))}
@@ -70,13 +66,11 @@ function WaveformBar({
   level,
   isRecording,
   reduceMotion,
-  isDark,
   isRecent,
 }: {
   level: number
   isRecording: boolean
   reduceMotion: boolean | null
-  isDark: boolean
   isRecent: boolean
 }) {
   const heightPx = Math.round(8 + level * 56)
@@ -85,11 +79,9 @@ function WaveformBar({
     "w-[3px] rounded-full sm:w-1",
     isRecording
       ? isRecent
-        ? "bg-red-400"
-        : "bg-red-400/55"
-      : isDark
-        ? "bg-white/70"
-        : "bg-foreground/50",
+        ? "bg-gradient-to-t from-violet-400 to-cyan-300"
+        : "bg-gradient-to-t from-violet-500/50 to-cyan-400/40"
+      : "bg-gradient-to-t from-white/25 to-white/60",
   )
 
   if (reduceMotion) {
@@ -100,7 +92,7 @@ function WaveformBar({
     <motion.span
       className={barClass}
       initial={false}
-      animate={{ height: heightPx }}
+      animate={{ height: heightPx, opacity: isRecording && isRecent ? 1 : 0.85 }}
       transition={{
         type: "spring",
         stiffness: 520,

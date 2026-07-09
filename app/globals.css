@@ -127,3 +127,28 @@
     @apply font-sans;
     }
 }
+
+@layer utilities {
+  .app-mesh-bg {
+    background-color: #06060f;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(120, 80, 255, 0.35), transparent 55%),
+      radial-gradient(ellipse 60% 45% at 90% 10%, rgba(56, 189, 248, 0.22), transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgba(244, 63, 94, 0.18), transparent 55%),
+      radial-gradient(ellipse 40% 30% at 0% 60%, rgba(139, 92, 246, 0.15), transparent 50%);
+  }
+
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #f8fafc 0%, #c4b5fd 45%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glass-ring {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 40px rgba(139, 92, 246, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+}
