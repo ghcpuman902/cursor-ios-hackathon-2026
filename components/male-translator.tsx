@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner"
 
 import { GlassPanel } from "@/components/glass-panel"
+import { MaleMemeCard } from "@/components/male-meme-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -40,6 +41,7 @@ import {
   translateFemale,
   type TranslationResult,
 } from "@/lib/translator"
+import { getMaleMeme } from "@/lib/male-memes"
 import { cn } from "@/lib/utils"
 
 type TranslatorGender = "male" | "female"
@@ -519,6 +521,8 @@ export function MaleTranslator({
   const isRecorderBusy =
     recorderStatus === "recording" || recorderStatus === "processing"
   const isBusy = isTranslating || isRecorderBusy
+  const maleMeme =
+    gender === "male" && result ? getMaleMeme(result.input, result) : null
 
   return (
     <>
@@ -896,6 +900,12 @@ export function MaleTranslator({
                   </div>
                 </GlassPanel>
               </div>
+
+              {maleMeme && (
+                <div className="flex justify-end">
+                  <MaleMemeCard meme={maleMeme} />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

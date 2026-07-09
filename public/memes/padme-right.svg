@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" role="img" aria-label="Right?">
+  <rect width="400" height="260" fill="#2c1810"/>
+  <circle cx="140" cy="110" r="40" fill="#f4c4a8"/>
+  <rect x="105" y="145" width="70" height="60" fill="#8e44ad" rx="6"/>
+  <circle cx="270" cy="105" r="38" fill="#f4c4a8"/>
+  <rect x="238" y="138" width="64" height="58" fill="#c0392b" rx="6"/>
+  <text x="200" y="230" text-anchor="middle" fill="#fff" font-family="Impact,Arial Black,sans-serif" font-size="32">&right?</text>
+</svg>

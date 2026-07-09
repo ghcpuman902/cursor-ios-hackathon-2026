@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Backing into bushes">
+  <rect width="400" height="240" fill="#87ceeb"/>
+  <ellipse cx="320" cy="170" rx="70" ry="50" fill="#27ae60"/>
+  <ellipse cx="350" cy="160" rx="50" ry="40" fill="#2ecc71"/>
+  <circle cx="160" cy="110" r="35" fill="#f4c4a8"/>
+  <rect x="130" y="140" width="60" height="55" fill="#fff" rx="6"/>
+  <path d="M120 170 L90 190 L120 195 Z" fill="#fff"/>
+  <text x="200" y="35" text-anchor="middle" fill="#1a1a1a" font-family="Impact,Arial Black,sans-serif" font-size="20">CAN'T HANG</text>
+</svg>

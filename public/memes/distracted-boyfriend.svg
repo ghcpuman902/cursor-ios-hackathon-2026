@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" role="img" aria-label="Distracted boyfriend">
+  <rect width="400" height="260" fill="#87ceeb"/>
+  <rect x="0" y="200" width="400" height="60" fill="#6b8e23"/>
+  <circle cx="90" cy="120" r="35" fill="#f4c4a8"/>
+  <rect x="55" y="150" width="70" height="70" fill="#e74c3c" rx="8"/>
+  <circle cx="200" cy="115" r="32" fill="#f4c4a8"/>
+  <rect x="170" y="145" width="60" height="65" fill="#3498db" rx="8"/>
+  <circle cx="310" cy="118" r="33" fill="#f4c4a8"/>
+  <rect x="280" y="148" width="60" height="62" fill="#f39c12" rx="8"/>
+  <path d="M200 100 Q240 80 290 95" stroke="#1a1a1a" stroke-width="4" fill="none"/>
+  <text x="200" y="28" text-anchor="middle" fill="#1a1a1a" font-family="Impact,Arial Black,sans-serif" font-size="20">DISTRACTED</text>
+</svg>

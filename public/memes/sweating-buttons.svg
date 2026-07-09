@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" role="img" aria-label="Sweating over two buttons">
+  <rect width="400" height="280" fill="#2d3436"/>
+  <circle cx="200" cy="95" r="50" fill="#f4c4a8"/>
+  <path d="M170 88 Q200 70 230 88" stroke="#1a1a1a" stroke-width="3" fill="none"/>
+  <circle cx="182" cy="82" r="4" fill="#1a1a1a"/>
+  <circle cx="218" cy="82" r="4" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="200" rx="70" ry="45" fill="#636e72"/>
+  <rect x="70" y="175" width="110" height="50" fill="#e74c3c" rx="8"/>
+  <rect x="220" y="175" width="110" height="50" fill="#0984e3" rx="8"/>
+  <text x="125" y="205" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="14" font-weight="bold">TRAP</text>
+  <text x="275" y="205" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="14" font-weight="bold">ALSO TRAP</text>
+  <text x="200" y="30" text-anchor="middle" fill="#fff" font-family="Impact,Arial Black,sans-serif" font-size="20">SWEATING</text>
+</svg>
