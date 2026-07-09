@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Audio transcription is not configured. Set OPENAI_API_KEY on the server.",
+          "Voice transcription is not configured. Set OPENAI_API_KEY on the server.",
       },
       { status: 503 },
     )

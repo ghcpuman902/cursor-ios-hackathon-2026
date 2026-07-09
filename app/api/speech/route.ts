@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Text-to-speech is not configured. Set OPENAI_API_KEY on the server.",
+          "Speech playback is not configured. Set OPENAI_API_KEY on the server.",
       },
       { status: 503 },
     )

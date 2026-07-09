@@ -208,7 +208,7 @@ export const useAudioRecorder = ({
       }
     }
 
-    recorder.start(250)
+    recorder.start()
     timerRef.current = window.setInterval(() => {
       if (startedAtRef.current !== null) {
         setDurationMs(Date.now() - startedAtRef.current)

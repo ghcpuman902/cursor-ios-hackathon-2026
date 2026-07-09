@@ -10,14 +10,16 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="min-h-svh bg-gradient-to-b from-background to-muted/40 px-4 py-10 sm:px-6 sm:py-16">
-      <MaleTranslator
-        appName={env.NEXT_PUBLIC_APP_NAME}
-        tagline={env.NEXT_PUBLIC_APP_TAGLINE}
-        sarcasmLevel={env.NEXT_PUBLIC_SARCASM_LEVEL}
-        gruntMode={env.NEXT_PUBLIC_GRUNT_MODE}
-        translationDelayMs={env.NEXT_PUBLIC_TRANSLATION_DELAY_MS}
-      />
+    <main className="relative flex min-h-svh items-center justify-center bg-zinc-100 px-4 py-8 dark:bg-zinc-950 sm:py-10">
+      <div className="relative w-full max-w-md">
+        <MaleTranslator
+          appName={env.NEXT_PUBLIC_APP_NAME}
+          tagline={env.NEXT_PUBLIC_APP_TAGLINE}
+          sarcasmLevel={env.NEXT_PUBLIC_SARCASM_LEVEL}
+          gruntMode={env.NEXT_PUBLIC_GRUNT_MODE}
+          translationDelayMs={env.NEXT_PUBLIC_TRANSLATION_DELAY_MS}
+        />
+      </div>
     </main>
   )
 }
