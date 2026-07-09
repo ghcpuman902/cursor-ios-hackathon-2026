@@ -2,7 +2,7 @@ import { generateSpeech } from "ai"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { getOpenAI } from "@/lib/ai"
+import { getSpeechModel } from "@/lib/ai"
 import { getServerEnv, isAudioConfigured } from "@/lib/server-env"
 
 export const runtime = "nodejs"
@@ -16,9 +16,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Speech playback is not configured. Set OPENAI_API_KEY on the server.",
+          "Speech playback is not configured. Set up AI Gateway authentication on the server.",
       },
-      { status: 503 },
+      { status: 503 }
     )
   }
 
@@ -27,17 +27,20 @@ export async function POST(request: Request) {
 
     if (!body.success) {
       return NextResponse.json(
-        { error: "Invalid request. Provide a non-empty 'text' field (max 1000 chars)." },
-        { status: 400 },
+        {
+          error:
+            "Invalid request. Provide a non-empty 'text' field (max 1000 chars).",
+        },
+        { status: 400 }
       )
     }
 
-    const { OPENAI_SPEECH_MODEL, OPENAI_SPEECH_VOICE } = getServerEnv()
+    const { AI_GATEWAY_SPEECH_VOICE } = getServerEnv()
 
     const speech = await generateSpeech({
-      model: getOpenAI().speech(OPENAI_SPEECH_MODEL),
+      model: getSpeechModel(),
       text: body.data.text,
-      voice: OPENAI_SPEECH_VOICE,
+      voice: AI_GATEWAY_SPEECH_VOICE,
       outputFormat: "mp3",
       abortSignal: AbortSignal.timeout(30_000),
     })
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
     console.error("Speech generation failed:", error)
     return NextResponse.json(
       { error: "Failed to generate speech. Try again in a moment." },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

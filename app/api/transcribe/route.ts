@@ -17,11 +17,11 @@ const getTranscriptionErrorMessage = (error: unknown) => {
     const apiError = error
 
     if (apiError.statusCode === 401) {
-      return "OpenAI API key is invalid. Check OPENAI_API_KEY on the server."
+      return "AI Gateway authentication failed. Check the server credentials."
     }
 
     if (apiError.statusCode === 429) {
-      return "OpenAI rate limit reached. Try again in a moment."
+      return "AI Gateway rate limit reached. Try again in a moment."
     }
 
     if (apiError.message) {
@@ -41,9 +41,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Voice transcription is not configured. Set OPENAI_API_KEY on the server.",
+          "Voice transcription is not configured. Set up AI Gateway authentication on the server.",
       },
-      { status: 503 },
+      { status: 503 }
     )
   }
 
@@ -53,27 +53,30 @@ export async function POST(request: Request) {
 
     if (!(audio instanceof Blob)) {
       return NextResponse.json(
-        { error: "Missing audio file. Send multipart form data with an 'audio' field." },
-        { status: 400 },
+        {
+          error:
+            "Missing audio file. Send multipart form data with an 'audio' field.",
+        },
+        { status: 400 }
       )
     }
 
     if (audio.size === 0) {
-      return NextResponse.json({ error: "Audio file is empty." }, { status: 400 })
+      return NextResponse.json(
+        { error: "Audio file is empty." },
+        { status: 400 }
+      )
     }
 
     if (audio.size > MAX_AUDIO_BYTES) {
       return NextResponse.json(
         { error: "Audio file is too large. Maximum size is 25 MB." },
-        { status: 413 },
+        { status: 413 }
       )
     }
 
     const audioBuffer = new Uint8Array(await audio.arrayBuffer())
-    const transcript = await transcribeAudioBuffer(
-      audioBuffer,
-      audio.type || undefined,
-    )
+    const transcript = await transcribeAudioBuffer(audioBuffer)
 
     return NextResponse.json({
       text: transcript.text,

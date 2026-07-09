@@ -2,10 +2,7 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 
 import { isAudioConfigured } from "../lib/server-env"
-import {
-  resolveAudioMediaType,
-  transcribeAudioBuffer,
-} from "../lib/transcribe-audio"
+import { transcribeAudioBuffer } from "../lib/transcribe-audio"
 
 const createTestWav = () => {
   const sampleRate = 16_000
@@ -31,35 +28,10 @@ const createTestWav = () => {
   return new Uint8Array(buffer)
 }
 
-const assert = (condition: boolean, message: string) => {
-  if (!condition) {
-    throw new Error(message)
-  }
-}
-
-const runUnitChecks = () => {
-  const wav = createTestWav()
-
-  assert(
-    resolveAudioMediaType(undefined, wav) === "audio/wav",
-    "Expected WAV signature detection",
-  )
-  assert(
-    resolveAudioMediaType("audio/webm;codecs=opus", wav) === "audio/wav",
-    "Declared webm type should not override mismatched WAV bytes",
-  )
-  assert(
-    resolveAudioMediaType("audio/webm", wav) === "audio/wav",
-    "Declared webm type should fall back to detected WAV bytes",
-  )
-
-  console.log("✓ resolveAudioMediaType unit checks passed")
-}
-
-const runLiveWhisperCheck = async () => {
+const runLiveTranscriptionCheck = async () => {
   if (!isAudioConfigured()) {
     console.log(
-      "⊘ Skipping live Whisper check — set OPENAI_API_KEY to run end-to-end transcription",
+      "⊘ Skipping live transcription check — set AI_GATEWAY_API_KEY to run it"
     )
     return
   }
@@ -72,23 +44,25 @@ const runLiveWhisperCheck = async () => {
   } catch {
     audio = createTestWav()
     console.log(
-      "ℹ No scripts/fixtures/grunt-sample.wav found — using generated silent WAV fixture",
+      "ℹ No scripts/fixtures/grunt-sample.wav found — using generated silent WAV fixture"
     )
   }
 
-  const transcript = await transcribeAudioBuffer(audio, "audio/wav")
+  const transcript = await transcribeAudioBuffer(audio)
 
-  console.log("✓ Live Whisper transcription succeeded")
+  console.log("✓ Live AI Gateway transcription succeeded")
   console.log(`  text: ${transcript.text || "(empty)"}`)
   console.log(`  language: ${transcript.language ?? "unknown"}`)
   console.log(
-    `  duration: ${transcript.durationInSeconds?.toFixed(2) ?? "unknown"}s`,
+    `  duration: ${transcript.durationInSeconds?.toFixed(2) ?? "unknown"}s`
   )
 }
 
 const runRouteChecks = async () => {
-  const previousKey = process.env.OPENAI_API_KEY
-  delete process.env.OPENAI_API_KEY
+  const previousApiKey = process.env.AI_GATEWAY_API_KEY
+  const previousOidcToken = process.env.VERCEL_OIDC_TOKEN
+  delete process.env.AI_GATEWAY_API_KEY
+  delete process.env.VERCEL_OIDC_TOKEN
 
   try {
     const { POST } = await import("../app/api/transcribe/route")
@@ -97,45 +71,52 @@ const runRouteChecks = async () => {
     formData.append(
       "audio",
       new Blob([wav], { type: "audio/wav" }),
-      "grunt.wav",
+      "grunt.wav"
     )
 
     const response = await POST(
       new Request("http://localhost/api/transcribe", {
         method: "POST",
         body: formData,
-      }),
+      })
     )
 
     const body = (await response.json()) as { error?: string }
 
     if (response.status !== 503) {
       throw new Error(
-        `Expected 503 when OPENAI_API_KEY is missing, got ${response.status}`,
+        `Expected 503 when Gateway authentication is missing, got ${response.status}`
       )
     }
 
-    if (!body.error?.includes("OPENAI_API_KEY")) {
-      throw new Error("Expected a helpful missing API key error message")
+    if (!body.error?.includes("AI Gateway")) {
+      throw new Error(
+        "Expected a helpful missing Gateway authentication message"
+      )
     }
 
-    console.log("✓ /api/transcribe returns 503 when OPENAI_API_KEY is missing")
+    console.log("✓ /api/transcribe returns 503 without Gateway authentication")
   } finally {
-    if (previousKey) {
-      process.env.OPENAI_API_KEY = previousKey
+    if (previousApiKey) {
+      process.env.AI_GATEWAY_API_KEY = previousApiKey
     } else {
-      delete process.env.OPENAI_API_KEY
+      delete process.env.AI_GATEWAY_API_KEY
+    }
+
+    if (previousOidcToken) {
+      process.env.VERCEL_OIDC_TOKEN = previousOidcToken
+    } else {
+      delete process.env.VERCEL_OIDC_TOKEN
     }
   }
 }
 
 const main = async () => {
-  runUnitChecks()
   await runRouteChecks()
-  await runLiveWhisperCheck()
+  await runLiveTranscriptionCheck()
 }
 
 main().catch((error) => {
-  console.error("Whisper test failed:", error)
+  console.error("AI Gateway audio test failed:", error)
   process.exitCode = 1
 })
