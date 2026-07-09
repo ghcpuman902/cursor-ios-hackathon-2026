@@ -4,30 +4,20 @@ import { useCallback, useRef, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import {
   ArrowRight,
-  Beer,
   Copy,
-  Dumbbell,
   Mic,
   Play,
   RefreshCw,
   Sparkles,
-  Square,
-  Volume2,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { VoiceNoteRecorder } from "@/components/voice-note-recorder"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
-import { CATEGORY_LABELS } from "@/lib/translations"
+import { SAMPLE_PHRASES, CATEGORY_LABELS } from "@/lib/translations"
 import {
   getRandomLoadingMessage,
   translateMale,
@@ -43,12 +33,7 @@ type MaleTranslatorProps = {
   translationDelayMs: number
 }
 
-const formatDuration = (durationMs: number) => {
-  const totalSeconds = Math.floor(durationMs / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`
-}
+type ViewMode = "voice" | "type"
 
 export function MaleTranslator({
   appName,
@@ -57,6 +42,7 @@ export function MaleTranslator({
   gruntMode,
   translationDelayMs,
 }: MaleTranslatorProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("voice")
   const [input, setInput] = useState("")
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
@@ -70,7 +56,7 @@ export function MaleTranslator({
     async (text: string) => {
       if (!text.trim()) {
         toast.error("He said nothing. That's also data.", {
-          description: "Type something he mumbled, texted, or grunted first.",
+          description: "Record a voice note or type something first.",
         })
         return
       }
@@ -90,8 +76,14 @@ export function MaleTranslator({
 
   const transcribeAudio = useCallback(
     async (blob: Blob) => {
+      const extension = blob.type.includes("mp4")
+        ? "m4a"
+        : blob.type.includes("ogg")
+          ? "ogg"
+          : "webm"
+
       const formData = new FormData()
-      formData.append("audio", blob, "grunt.webm")
+      formData.append("audio", blob, `grunt.${extension}`)
 
       const response = await fetch("/api/transcribe", {
         method: "POST",
@@ -117,6 +109,8 @@ export function MaleTranslator({
   const {
     status: recorderStatus,
     durationMs,
+    waveformHistory,
+    liveLevels,
     startRecording,
     stopRecording,
     isSupported: isMicSupported,
@@ -125,9 +119,7 @@ export function MaleTranslator({
       try {
         setLoadingMessage("Decoding grunt frequencies…")
         await transcribeAudio(blob)
-        toast.success("Grunt transcribed!", {
-          description: "Now translating what he actually meant.",
-        })
+        toast.success("Voice note transcribed!")
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Transcription failed."
@@ -135,13 +127,6 @@ export function MaleTranslator({
       }
     },
   })
-
-  const handleSubmit = () => translate(input)
-
-  const handleSample = (phrase: string) => {
-    setInput(phrase)
-    void translate(phrase)
-  }
 
   const handleToggleRecording = async () => {
     if (recorderStatus === "recording") {
@@ -152,12 +137,22 @@ export function MaleTranslator({
     if (recorderStatus === "processing" || isTranslating) return
 
     try {
+      setInput("")
+      setResult(null)
       await startRecording()
     } catch {
       toast.error("Microphone access denied.", {
-        description: "Allow mic access to record what he grunted.",
+        description: "Allow mic access to record a voice note.",
       })
     }
+  }
+
+  const handleSubmit = () => translate(input)
+
+  const handleSample = (phrase: string) => {
+    setViewMode("type")
+    setInput(phrase)
+    void translate(phrase)
   }
 
   const stopSpeechPlayback = useCallback(() => {
@@ -199,15 +194,10 @@ export function MaleTranslator({
       const audio = new Audio(audioUrl)
       audioRef.current = audio
 
-      audio.onended = () => {
-        stopSpeechPlayback()
-      }
-
+      audio.onended = () => stopSpeechPlayback()
       audio.onerror = () => {
         stopSpeechPlayback()
-        toast.error("Playback failed.", {
-          description: "Could not play the generated audio.",
-        })
+        toast.error("Playback failed.")
       }
 
       await audio.play()
@@ -222,9 +212,7 @@ export function MaleTranslator({
   const copyResult = async () => {
     if (!result) return
     await navigator.clipboard.writeText(result.translation)
-    toast.success("Copied!", {
-      description: "Paste it in the group chat at your own risk.",
-    })
+    toast.success("Copied!")
   }
 
   const sarcasmLabel =
@@ -241,41 +229,74 @@ export function MaleTranslator({
   const isBusy = isTranslating || isRecorderBusy
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <header className="space-y-3 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Dumbbell className="size-6 text-primary" aria-hidden />
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {appName}
-          </h1>
-          <Beer className="size-6 text-muted-foreground" aria-hidden />
+    <div className="mx-auto flex w-full max-w-md flex-col gap-5">
+      <header className="space-y-2 px-1 text-center">
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-zinc-950 px-3 py-1 text-[11px] font-medium tracking-wide text-white">
+          <Mic className="size-3" aria-hidden />
+          Voice note mode
         </div>
-        <p className="text-sm text-muted-foreground sm:text-base">{tagline}</p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Badge variant="secondary">
-            Sarcasm: {sarcasmLevel}/10 ({sarcasmLabel})
-          </Badge>
-          {gruntMode && (
-            <Badge variant="outline">Grunt mode: ON *[mm-hmm]*</Badge>
-          )}
-          <Badge variant="outline" className="font-mono">
-            Peer-reviewed by zero men
-          </Badge>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">{appName}</h1>
+        <p className="text-sm text-muted-foreground">{tagline}</p>
+        <Badge variant="secondary" className="rounded-full">
+          Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
+        </Badge>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Volume2 className="size-4" aria-hidden />
-            What he said
-          </CardTitle>
-          <CardDescription>
-            Paste the text, grunt, or emotionally unavailable sentence below — or
-            record the grunt directly.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {viewMode === "voice" ? (
+        <div className="space-y-4">
+          {isMicSupported ? (
+            <VoiceNoteRecorder
+              status={recorderStatus}
+              durationMs={durationMs}
+              waveformHistory={waveformHistory}
+              liveLevels={liveLevels}
+              transcript={input}
+              disabled={isBusy && recorderStatus !== "recording"}
+              onToggleRecording={() => void handleToggleRecording()}
+              onSwitchToType={() => setViewMode("type")}
+            />
+          ) : (
+            <div className="rounded-[1.75rem] bg-zinc-950 px-5 py-10 text-center text-white">
+              <p className="text-sm">Voice notes need a mic-friendly browser.</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-4 rounded-full"
+                onClick={() => setViewMode("type")}
+              >
+                Switch to typing
+              </Button>
+            </div>
+          )}
+
+          {input.trim() && recorderStatus === "idle" && !isTranslating && (
+            <Button
+              onClick={handleSubmit}
+              disabled={isBusy}
+              className="h-12 w-full rounded-full"
+              size="lg"
+            >
+              <Sparkles aria-hidden />
+              Translate voice note
+              <ArrowRight aria-hidden />
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4 rounded-[1.75rem] border border-border/70 bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Type what he said</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setViewMode("voice")}
+            >
+              <Mic className="size-4" aria-hidden />
+              Voice
+            </Button>
+          </div>
+
           <Textarea
             placeholder={`e.g. "I'm fine", "k", "do whatever you want"`}
             value={input}
@@ -286,66 +307,18 @@ export function MaleTranslator({
                 handleSubmit()
               }
             }}
-            rows={3}
-            className="resize-none"
+            rows={4}
+            className="min-h-28 resize-none rounded-2xl"
             disabled={isBusy}
           />
 
-          {isMicSupported && (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant={recorderStatus === "recording" ? "destructive" : "outline"}
-                onClick={handleToggleRecording}
-                disabled={isBusy && recorderStatus !== "recording"}
-                aria-label={
-                  recorderStatus === "recording"
-                    ? "Stop recording grunt"
-                    : "Record a grunt"
-                }
-              >
-                {recorderStatus === "recording" ? (
-                  <>
-                    <Square className="fill-current" aria-hidden />
-                    Stop recording
-                  </>
-                ) : recorderStatus === "processing" ? (
-                  <>
-                    <RefreshCw className="animate-spin" aria-hidden />
-                    Transcribing…
-                  </>
-                ) : (
-                  <>
-                    <Mic aria-hidden />
-                    Record grunt
-                  </>
-                )}
-              </Button>
-
-              {recorderStatus === "recording" && (
-                <span className="text-sm text-muted-foreground">
-                  Recording {formatDuration(durationMs)}
-                </span>
-              )}
-            </div>
-          )}
-
           <div className="flex flex-wrap gap-2">
-            <span className="w-full text-xs text-muted-foreground">
-              Quick samples (tap to translate):
-            </span>
-            {[
-              "k",
-              "I'm fine",
-              "Do whatever you want",
-              "I'm almost there",
-              "Sounds good",
-              "Bruh",
-            ].map((phrase) => (
+            {SAMPLE_PHRASES.map((phrase) => (
               <Button
                 key={phrase}
                 variant="outline"
                 size="sm"
+                className="rounded-full"
                 onClick={() => handleSample(phrase)}
                 disabled={isBusy}
               >
@@ -357,23 +330,14 @@ export function MaleTranslator({
           <Button
             onClick={handleSubmit}
             disabled={isBusy}
-            className="w-full sm:w-auto"
+            className="h-11 w-full rounded-full"
           >
-            {isTranslating ? (
-              <>
-                <RefreshCw className="animate-spin" aria-hidden />
-                Translating…
-              </>
-            ) : (
-              <>
-                <Sparkles aria-hidden />
-                Translate
-                <ArrowRight aria-hidden />
-              </>
-            )}
+            <Sparkles aria-hidden />
+            Translate
+            <ArrowRight aria-hidden />
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {(isTranslating || recorderStatus === "processing") && (
@@ -382,14 +346,9 @@ export function MaleTranslator({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
+            className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-4 py-8 text-center"
           >
-            <Card className="border-dashed">
-              <CardContent className="py-8 text-center">
-                <p className="animate-pulse text-sm text-muted-foreground">
-                  {loadingMessage}
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-sm text-muted-foreground">{loadingMessage}</p>
           </motion.div>
         )}
 
@@ -399,100 +358,89 @@ export function MaleTranslator({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
+            className="space-y-3"
           >
-            <Card
-              className={cn(
-                "border-2",
-                result.isFallback
-                  ? "border-muted"
-                  : "border-primary/30 bg-primary/5",
-              )}
-            >
-              <CardHeader>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">What he meant</CardTitle>
-                    <CardDescription>
-                      {result.isFallback
-                        ? "No exact match — here's our best guess (still 100%+ confident)"
-                        : "Decoded with scientifically dubious precision"}
-                    </CardDescription>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge>
-                      {result.category === "mystery"
-                        ? "🔮 Mystery"
-                        : CATEGORY_LABELS[result.category]}
-                    </Badge>
-                    <Badge variant="secondary" className="font-mono">
-                      {result.confidence}% confident
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <blockquote className="border-l-4 border-primary pl-4 text-base leading-relaxed sm:text-lg">
-                  &ldquo;{result.translation}&rdquo;
-                </blockquote>
+            <div className="flex justify-start">
+              <div className="max-w-[88%] rounded-3xl rounded-bl-md bg-zinc-200 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
+                <p className="text-[10px] font-medium tracking-wide uppercase opacity-60">
+                  His voice note
+                </p>
+                <p className="mt-1">&ldquo;{result.input}&rdquo;</p>
+              </div>
+            </div>
 
-                {result.matchedPattern && (
-                  <p className="text-xs text-muted-foreground">
-                    Matched dialect pattern: &ldquo;{result.matchedPattern}&rdquo;
-                  </p>
+            <div className="flex justify-end">
+              <div
+                className={cn(
+                  "max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm",
+                  result.isFallback
+                    ? "bg-zinc-800 text-white"
+                    : "bg-blue-600 text-white",
                 )}
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <p className="text-[10px] font-medium tracking-wide uppercase opacity-70">
+                    Translation
+                  </p>
+                  <Badge className="h-5 rounded-full bg-white/15 px-2 text-[10px] text-white">
+                    {result.category === "mystery"
+                      ? "🔮 Mystery"
+                      : CATEGORY_LABELS[result.category]}
+                  </Badge>
+                  <Badge className="h-5 rounded-full bg-white/15 px-2 font-mono text-[10px] text-white">
+                    {result.confidence}%
+                  </Badge>
+                </div>
 
-                <div className="flex flex-wrap gap-2">
+                <p className="text-base leading-relaxed font-medium">
+                  &ldquo;{result.translation}&rdquo;
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    variant="outline"
                     size="sm"
+                    variant="secondary"
+                    className="h-8 rounded-full bg-white/15 text-white hover:bg-white/25"
                     onClick={handleSpeakTranslation}
                     disabled={isSpeaking}
-                    aria-label="Hear translation aloud"
                   >
                     {isSpeaking ? (
-                      <>
-                        <RefreshCw className="animate-spin" aria-hidden />
-                        Playing…
-                      </>
+                      <RefreshCw className="animate-spin" aria-hidden />
                     ) : (
-                      <>
-                        <Play aria-hidden />
-                        Hear translation
-                      </>
+                      <Play aria-hidden />
                     )}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={copyResult}>
-                    <Copy aria-hidden />
-                    Copy translation
+                    Play
                   </Button>
                   <Button
-                    variant="ghost"
                     size="sm"
+                    variant="secondary"
+                    className="h-8 rounded-full bg-white/15 text-white hover:bg-white/25"
+                    onClick={copyResult}
+                  >
+                    <Copy aria-hidden />
+                    Copy
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 rounded-full text-white/80 hover:bg-white/10 hover:text-white"
                     onClick={() => {
                       stopSpeechPlayback()
                       setResult(null)
                       setInput("")
                     }}
                   >
-                    Clear & try again
+                    New note
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <footer className="text-center text-xs text-muted-foreground">
-        <p>
-          Not affiliated with any actual men. Results may vary. Side effects
-          include eye rolls and improved communication (unlikely).
-        </p>
-        <p className="mt-1">
-          Tip: Press <kbd className="rounded border px-1">⌘</kbd>+
-          <kbd className="rounded border px-1">Enter</kbd> to translate, or tap
-          the mic to record a grunt.
-        </p>
+      <footer className="text-center text-[11px] text-muted-foreground">
+        Voice notes stay on your device until transcribed.
       </footer>
     </div>
   )

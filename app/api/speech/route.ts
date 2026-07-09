@@ -2,8 +2,8 @@ import { generateSpeech } from "ai"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { openai } from "@/lib/ai"
-import { serverEnv } from "@/lib/server-env"
+import { getOpenAI } from "@/lib/ai"
+import { getServerEnv, isAudioConfigured } from "@/lib/server-env"
 
 export const runtime = "nodejs"
 
@@ -12,6 +12,16 @@ const speechRequestSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  if (!isAudioConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Speech playback is not configured. Set OPENAI_API_KEY on the server.",
+      },
+      { status: 503 },
+    )
+  }
+
   try {
     const body = speechRequestSchema.safeParse(await request.json())
 
@@ -22,10 +32,12 @@ export async function POST(request: Request) {
       )
     }
 
+    const { OPENAI_SPEECH_MODEL, OPENAI_SPEECH_VOICE } = getServerEnv()
+
     const speech = await generateSpeech({
-      model: openai.speech(serverEnv.OPENAI_SPEECH_MODEL),
+      model: getOpenAI().speech(OPENAI_SPEECH_MODEL),
       text: body.data.text,
-      voice: serverEnv.OPENAI_SPEECH_VOICE,
+      voice: OPENAI_SPEECH_VOICE,
       outputFormat: "mp3",
       abortSignal: AbortSignal.timeout(30_000),
     })
