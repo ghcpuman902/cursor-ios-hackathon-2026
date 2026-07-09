@@ -1,15 +1,24 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import Image from "next/image"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import {
   ArrowRight,
   Copy,
+  ImageUp,
   Keyboard,
   Mic,
   Play,
   RefreshCw,
   Sparkles,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -72,7 +81,7 @@ type MaleTranslatorProps = {
   translationDelayMs: number
 }
 
-type ViewMode = "voice" | "type"
+type ViewMode = "voice" | "type" | "screenshot"
 
 function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
   const reduceMotion = useReducedMotion()
@@ -185,9 +194,23 @@ export function MaleTranslator({
   const [isTranslating, setIsTranslating] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("")
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<
+    string | null
+  >(null)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const speechUrlRef = useRef<string | null>(null)
+  const screenshotInputRef = useRef<HTMLInputElement | null>(null)
+  const screenshotUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (screenshotUrlRef.current) {
+        URL.revokeObjectURL(screenshotUrlRef.current)
+      }
+    }
+  }, [])
 
   const translate = useCallback(
     async (text: string) => {
@@ -337,6 +360,84 @@ export function MaleTranslator({
     void translate(phrase)
   }
 
+  const clearScreenshot = useCallback(() => {
+    if (screenshotUrlRef.current) {
+      URL.revokeObjectURL(screenshotUrlRef.current)
+      screenshotUrlRef.current = null
+    }
+
+    if (screenshotInputRef.current) {
+      screenshotInputRef.current.value = ""
+    }
+
+    setScreenshotFile(null)
+    setScreenshotPreviewUrl(null)
+  }, [])
+
+  const handleScreenshotChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    const isSupportedType = ["image/jpeg", "image/png", "image/webp"].includes(
+      file.type
+    )
+
+    if (!isSupportedType || file.size > 10 * 1024 * 1024) {
+      event.target.value = ""
+      toast.error("Choose a PNG, JPEG, or WebP screenshot up to 10 MB.")
+      return
+    }
+
+    clearScreenshot()
+    const previewUrl = URL.createObjectURL(file)
+    screenshotUrlRef.current = previewUrl
+    setScreenshotFile(file)
+    setScreenshotPreviewUrl(previewUrl)
+    setResult(null)
+  }
+
+  const handleAnalyzeScreenshot = async () => {
+    if (!screenshotFile) {
+      toast.error("Choose a conversation screenshot first.")
+      return
+    }
+
+    setIsTranslating(true)
+    setLoadingMessage("Reading both sides of the conversation…")
+    setResult(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("screenshot", screenshotFile)
+      formData.append("gender", gender)
+      formData.append("sarcasmLevel", String(sarcasmLevel))
+      formData.append("gruntMode", String(gruntMode))
+
+      const response = await fetch("/api/analyze-screenshot", {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(45_000),
+      })
+      const data = (await response.json()) as TranslationResult & {
+        error?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Screenshot analysis failed.")
+      }
+
+      setInput(data.input)
+      setResult(data)
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Screenshot analysis failed."
+      toast.error("Could not read that screenshot.", { description: message })
+    } finally {
+      setIsTranslating(false)
+    }
+  }
+
   const stopSpeechPlayback = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause()
@@ -403,6 +504,7 @@ export function MaleTranslator({
     setGender(nextGender)
     setInput("")
     setResult(null)
+    clearScreenshot()
   }
 
   const sarcasmLabel =
@@ -424,11 +526,14 @@ export function MaleTranslator({
 
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col gap-6">
         <header className="relative space-y-5 pt-12 text-center sm:pt-10">
-          <div className="absolute top-0 right-0">
+          <div className="absolute top-0 right-0 flex items-center gap-2">
+            <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
+              I&apos;m into
+            </span>
             <div
               className="flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
               role="tablist"
-              aria-label="Translator gender"
+              aria-label="Who I am into"
             >
               {(["male", "female"] as const).map((mode) => (
                 <button
@@ -445,7 +550,7 @@ export function MaleTranslator({
                       : "text-white/45 hover:bg-white/8 hover:text-white/75"
                   )}
                 >
-                  {mode === "male" ? "Male" : "Female"}
+                  {mode === "male" ? "Men" : "Women"}
                 </button>
               ))}
             </div>
@@ -476,11 +581,11 @@ export function MaleTranslator({
         </header>
 
         <div
-          className="grid grid-cols-2 rounded-full border border-white/12 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+          className="grid grid-cols-3 rounded-full border border-white/12 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
           role="tablist"
           aria-label="Input method"
         >
-          {(["voice", "type"] as const).map((mode) => (
+          {(["voice", "type", "screenshot"] as const).map((mode) => (
             <button
               key={mode}
               type="button"
@@ -497,10 +602,16 @@ export function MaleTranslator({
             >
               {mode === "voice" ? (
                 <Mic className="size-4" aria-hidden />
-              ) : (
+              ) : mode === "type" ? (
                 <Keyboard className="size-4" aria-hidden />
+              ) : (
+                <ImageUp className="size-4" aria-hidden />
               )}
-              {mode === "voice" ? "Voice" : "Type"}
+              {mode === "voice"
+                ? "Voice"
+                : mode === "type"
+                  ? "Type"
+                  : "Screenshot"}
             </button>
           ))}
         </div>
@@ -561,7 +672,7 @@ export function MaleTranslator({
                       </div>
                     )}
                 </div>
-              ) : (
+              ) : viewMode === "type" ? (
                 <div className="space-y-4 p-5">
                   <p className="text-sm font-medium text-foreground/80">
                     {genderConfig.typeLabel}
@@ -608,6 +719,77 @@ export function MaleTranslator({
                   >
                     <Sparkles aria-hidden />
                     Translate
+                    <ArrowRight aria-hidden />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-5 p-5">
+                  <div>
+                    <p className="text-sm font-medium text-foreground/80">
+                      Upload a two-sided conversation
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      We&apos;ll separate your messages from theirs, then run
+                      the same dictionary-first analysis.
+                    </p>
+                  </div>
+
+                  {screenshotPreviewUrl ? (
+                    <div className="relative overflow-hidden rounded-2xl border border-white/12 bg-black/20">
+                      <Image
+                        src={screenshotPreviewUrl}
+                        alt="Selected conversation screenshot"
+                        width={900}
+                        height={1600}
+                        unoptimized
+                        className="max-h-80 w-full object-contain"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon-sm"
+                        className="absolute top-2 right-2 rounded-full bg-black/55 text-white hover:bg-black/70"
+                        onClick={clearScreenshot}
+                        disabled={isBusy}
+                        aria-label="Remove screenshot"
+                      >
+                        <X aria-hidden />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="conversation-screenshot"
+                      className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/[0.05] px-6 text-center transition-colors focus-within:border-white/30 focus-within:ring-2 focus-within:ring-white/15 hover:border-white/30 hover:bg-white/[0.08]"
+                    >
+                      <span className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white/80">
+                        <ImageUp className="size-5" aria-hidden />
+                      </span>
+                      <span className="mt-4 text-sm font-medium text-white/85">
+                        Choose screenshot
+                      </span>
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        PNG, JPEG, or WebP · 10 MB max
+                      </span>
+                    </label>
+                  )}
+
+                  <input
+                    ref={screenshotInputRef}
+                    id="conversation-screenshot"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={handleScreenshotChange}
+                    disabled={isBusy}
+                  />
+
+                  <Button
+                    onClick={() => void handleAnalyzeScreenshot()}
+                    disabled={isBusy || !screenshotFile}
+                    className="h-11 w-full rounded-full"
+                  >
+                    <Sparkles aria-hidden />
+                    Analyze conversation
                     <ArrowRight aria-hidden />
                   </Button>
                 </div>
@@ -706,6 +888,7 @@ export function MaleTranslator({
                         stopSpeechPlayback()
                         setResult(null)
                         setInput("")
+                        clearScreenshot()
                       }}
                     >
                       New
