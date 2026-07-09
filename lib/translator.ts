@@ -1,10 +1,19 @@
 import {
   FALLBACK_TRANSLATIONS,
+  FEMALE_FALLBACK_TRANSLATIONS,
+  FEMALE_LOADING_MESSAGES,
+  FEMALE_TRANSLATIONS,
   GRUNT_ANNOTATIONS,
   LOADING_MESSAGES,
   MALE_TRANSLATIONS,
+  type TranslationEntry,
   type TranslationCategory,
 } from "@/lib/translations"
+
+export type TranslationOptions = {
+  sarcasmLevel: number
+  gruntMode: boolean
+}
 
 export type TranslationResult = {
   input: string
@@ -15,40 +24,43 @@ export type TranslationResult = {
   isFallback: boolean
 }
 
-function normalizeInput(text: string): string {
+type TranslationDictionary = {
+  entries: readonly TranslationEntry[]
+  fallbackTranslations: readonly string[]
+  emptyTranslation: string
+}
+
+const normalizeInput = (text: string): string => {
   return text.trim().toLowerCase().replace(/\s+/g, " ")
 }
 
-function pickRandom<T>(items: readonly T[]): T {
+const pickRandom = <T>(items: readonly T[]): T => {
   return items[Math.floor(Math.random() * items.length)]!
 }
 
-function maybeAddGrunt(text: string, gruntMode: boolean): string {
+const maybeAddGrunt = (text: string, gruntMode: boolean): string => {
   if (!gruntMode) return text
   return text + pickRandom(GRUNT_ANNOTATIONS)
 }
 
-export function getRandomLoadingMessage(): string {
-  return pickRandom(LOADING_MESSAGES)
-}
-
-export function translateMale(
+const translateFromDictionary = (
   input: string,
-  options: { sarcasmLevel: number; gruntMode: boolean },
-): TranslationResult {
+  options: TranslationOptions,
+  dictionary: TranslationDictionary
+): TranslationResult => {
   const normalized = normalizeInput(input)
 
   if (!normalized) {
     return {
       input,
-      translation: "… *[silence]* … (He said nothing. This is also a statement.)",
+      translation: dictionary.emptyTranslation,
       category: "mystery",
       confidence: 108,
       isFallback: true,
     }
   }
 
-  const match = MALE_TRANSLATIONS.find((entry) => {
+  const match = dictionary.entries.find((entry) => {
     const pattern = entry.pattern.toLowerCase()
     return normalized === pattern || normalized.includes(pattern)
   })
@@ -71,9 +83,44 @@ export function translateMale(
 
   return {
     input,
-    translation: maybeAddGrunt(pickRandom(FALLBACK_TRANSLATIONS), options.gruntMode),
+    translation: maybeAddGrunt(
+      pickRandom(dictionary.fallbackTranslations),
+      options.gruntMode
+    ),
     category: "mystery",
     confidence: 101 + options.sarcasmLevel,
     isFallback: true,
   }
+}
+
+export const getRandomLoadingMessage = (): string => {
+  return pickRandom(LOADING_MESSAGES)
+}
+
+export const getRandomFemaleLoadingMessage = (): string => {
+  return pickRandom(FEMALE_LOADING_MESSAGES)
+}
+
+export const translateMale = (
+  input: string,
+  options: TranslationOptions
+): TranslationResult => {
+  return translateFromDictionary(input, options, {
+    entries: MALE_TRANSLATIONS,
+    fallbackTranslations: FALLBACK_TRANSLATIONS,
+    emptyTranslation:
+      "… *[silence]* … (He said nothing. This is also a statement.)",
+  })
+}
+
+export const translateFemale = (
+  input: string,
+  options: TranslationOptions
+): TranslationResult => {
+  return translateFromDictionary(input, options, {
+    entries: FEMALE_TRANSLATIONS,
+    fallbackTranslations: FEMALE_FALLBACK_TRANSLATIONS,
+    emptyTranslation:
+      "… *[silence]* … (She said nothing. Ask whether she wants to talk.)",
+  })
 }
