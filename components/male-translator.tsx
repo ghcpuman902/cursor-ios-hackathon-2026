@@ -233,13 +233,13 @@ export function MaleTranslator({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
       <header className="space-y-4 text-center">
-        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/60 uppercase backdrop-blur-md">
-          <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium tracking-wider text-white/50 uppercase">
+          <span className="size-1.5 rounded-full bg-white/50" />
           Live decode
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-gradient-brand text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {appName}
           </h1>
           <p className="mx-auto max-w-xs text-sm leading-relaxed text-white/50">
@@ -317,7 +317,7 @@ export function MaleTranslator({
             <Button
               onClick={handleSubmit}
               disabled={isBusy}
-              className="h-12 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-[0_0_30px_rgba(139,92,246,0.35)] hover:from-violet-500 hover:to-cyan-400"
+              className="h-12 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
               size="lg"
             >
               <Sparkles aria-hidden />
@@ -341,7 +341,7 @@ export function MaleTranslator({
               }
             }}
             rows={4}
-            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-violet-400/50 focus-visible:ring-violet-400/20"
+            className="min-h-28 resize-none rounded-2xl border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-sm focus-visible:border-white/25 focus-visible:ring-white/10"
             disabled={isBusy}
           />
 
@@ -363,7 +363,7 @@ export function MaleTranslator({
           <Button
             onClick={handleSubmit}
             disabled={isBusy}
-            className="h-11 w-full rounded-full border-0 bg-gradient-to-r from-violet-600 to-cyan-500 text-white hover:from-violet-500 hover:to-cyan-400"
+            className="h-11 w-full rounded-full border-0 bg-white text-black hover:bg-white/90"
           >
             <Sparkles aria-hidden />
             Translate
@@ -381,7 +381,7 @@ export function MaleTranslator({
             exit={{ opacity: 0, y: -8 }}
           >
             <GlassPanel variant="subtle" className="px-4 py-8 text-center">
-              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-violet-400" />
+              <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-white/15 border-t-white/70" />
               <p className="text-sm text-white/50">{loadingMessage}</p>
             </GlassPanel>
           </motion.div>
@@ -410,7 +410,7 @@ export function MaleTranslator({
                 className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-violet-300/80 uppercase">
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-white/45 uppercase">
                     Translation
                   </p>
                   <Badge className="h-5 rounded-full border-white/10 bg-white/10 px-2 text-[10px] text-white/80">

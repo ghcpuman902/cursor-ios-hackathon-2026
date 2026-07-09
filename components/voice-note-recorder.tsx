@@ -40,7 +40,7 @@ export function VoiceNoteRecorder({
       <div className="border-b border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold tracking-[0.22em] text-violet-300/80 uppercase">
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-white/45 uppercase">
               Voice capture
             </p>
             <p className="mt-1 text-sm text-white/75">
@@ -79,7 +79,7 @@ export function VoiceNoteRecorder({
             className={cn(
               "font-mono text-5xl font-extralight tabular-nums tracking-tight sm:text-6xl",
               isRecording
-                ? "bg-gradient-to-r from-rose-300 to-violet-300 bg-clip-text text-transparent"
+                ? "text-white"
                 : "text-white/90",
             )}
           >
@@ -96,8 +96,8 @@ export function VoiceNoteRecorder({
         </div>
 
         {transcript?.trim() ? (
-          <div className="w-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] px-4 py-3 text-left backdrop-blur-md">
-            <p className="text-[10px] font-semibold tracking-[0.18em] text-cyan-300/70 uppercase">
+          <div className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left">
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/45 uppercase">
               Transcribed
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-white/90">
@@ -114,25 +114,12 @@ export function VoiceNoteRecorder({
 
         <div className="relative flex items-center justify-center pt-1">
           {isRecording && (
-            <>
-              <motion.span
-                className="absolute size-32 rounded-full border border-rose-400/25"
-                initial={{ opacity: 0.7, scale: 0.88 }}
-                animate={{ opacity: 0, scale: 1.55 }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-              />
-              <motion.span
-                className="absolute size-32 rounded-full border border-violet-400/20"
-                initial={{ opacity: 0.5, scale: 0.92 }}
-                animate={{ opacity: 0, scale: 1.85 }}
-                transition={{
-                  duration: 1.6,
-                  repeat: Infinity,
-                  ease: "easeOut",
-                  delay: 0.35,
-                }}
-              />
-            </>
+            <motion.span
+              className="absolute size-32 rounded-full border border-white/10"
+              initial={{ opacity: 0.5, scale: 0.9 }}
+              animate={{ opacity: 0, scale: 1.5 }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
+            />
           )}
 
           <button
@@ -141,8 +128,8 @@ export function VoiceNoteRecorder({
             onClick={onToggleRecording}
             aria-label={isRecording ? "Stop recording" : "Start recording"}
             className={cn(
-              "relative z-10 flex size-[5.5rem] items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-rose-500 to-violet-600 text-white shadow-[0_0_50px_rgba(168,85,247,0.45)] transition-transform active:scale-95 disabled:opacity-50",
-              isRecording && "from-rose-600 to-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.5)]",
+              "relative z-10 flex size-[5.5rem] items-center justify-center rounded-full border border-white/15 bg-[#ff3b30] text-white shadow-[0_8px_24px_rgba(255,59,48,0.35)] transition-transform active:scale-95 disabled:opacity-50",
+              isRecording && "bg-[#ff453a] shadow-[0_8px_28px_rgba(255,69,58,0.45)]",
             )}
           >
             <span className="absolute inset-1 rounded-full border border-white/20" />
