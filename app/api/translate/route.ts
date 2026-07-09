@@ -4,12 +4,17 @@ import { z } from "zod"
 
 import { getTextModel } from "@/lib/ai"
 import { isGatewayConfigured } from "@/lib/server-env"
-import { translateMale, type TranslationResult } from "@/lib/translator"
+import {
+  translateFemale,
+  translateMale,
+  type TranslationResult,
+} from "@/lib/translator"
 
 export const runtime = "nodejs"
 
 const translationRequestSchema = z.object({
   input: z.string().trim().min(1).max(500),
+  gender: z.enum(["male", "female"]).default("male"),
   sarcasmLevel: z.number().int().min(1).max(10),
   gruntMode: z.boolean(),
 })
@@ -69,8 +74,11 @@ export async function POST(request: Request) {
     )
   }
 
-  const { input, sarcasmLevel, gruntMode } = body.data
-  const baseline = translateMale(input, { sarcasmLevel, gruntMode })
+  const { input, gender, sarcasmLevel, gruntMode } = body.data
+  const baseline =
+    gender === "female"
+      ? translateFemale(input, { sarcasmLevel, gruntMode })
+      : translateMale(input, { sarcasmLevel, gruntMode })
 
   if (!isGatewayConfigured()) {
     return NextResponse.json(baseline)

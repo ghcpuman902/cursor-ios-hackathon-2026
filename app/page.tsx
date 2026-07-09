@@ -10,21 +10,8 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="app-mesh-bg relative flex min-h-svh items-center justify-center overflow-hidden px-4 py-8 sm:py-12">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 left-1/2 size-[28rem] -translate-x-1/2 rounded-full bg-violet-500/20 blur-[100px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-0 bottom-0 size-80 translate-x-1/4 rounded-full bg-cyan-400/15 blur-[90px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-16 top-1/3 size-64 rounded-full bg-rose-500/10 blur-[80px]"
-      />
-
-      <div className="relative w-full max-w-md">
+    <main className="app-shell-bg flex min-h-dvh flex-col px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:items-center sm:justify-center sm:py-12">
+      <div className="relative mx-auto w-full max-w-md sm:my-auto">
         <MaleTranslator
           appName={env.NEXT_PUBLIC_APP_NAME}
           tagline={env.NEXT_PUBLIC_APP_TAGLINE}
