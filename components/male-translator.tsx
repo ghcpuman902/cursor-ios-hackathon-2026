@@ -79,66 +79,89 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
   const isMale = gender === "male"
 
   return (
-    <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-      aria-hidden
-    >
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={gender}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.7 }}
-        >
+    <>
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[var(--app-shell)]"
+        aria-hidden
+      >
+        <AnimatePresence mode="sync">
           <motion.div
-            className={cn(
-              "absolute -top-28 -left-24 size-96 rounded-full blur-[90px]",
-              isMale ? "bg-blue-500/30" : "bg-fuchsia-500/28"
-            )}
-            animate={
-              reduceMotion
-                ? undefined
-                : {
-                    x: [0, 34, -12, 0],
-                    y: [0, 22, 48, 0],
-                    scale: [1, 1.08, 0.96, 1],
-                  }
-            }
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className={cn(
-              "absolute top-[28%] -right-32 size-[28rem] rounded-full blur-[110px]",
-              isMale ? "bg-cyan-400/22" : "bg-rose-400/24"
-            )}
-            animate={
-              reduceMotion
-                ? undefined
-                : {
-                    x: [0, -46, 10, 0],
-                    y: [0, 42, -18, 0],
-                    scale: [1, 0.94, 1.07, 1],
-                  }
-            }
-            transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className={cn(
-              "absolute -bottom-40 left-[18%] size-[30rem] rounded-full blur-[120px]",
-              isMale ? "bg-violet-500/24" : "bg-amber-400/18"
-            )}
-            animate={
-              reduceMotion
-                ? undefined
-                : { x: [0, 54, -24, 0], y: [0, -28, 8, 0] }
-            }
-            transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
-      </AnimatePresence>
-    </div>
+            key={gender}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.7 }}
+          >
+            <motion.div
+              className={cn(
+                "absolute -top-28 -left-24 size-96 rounded-full blur-[90px]",
+                isMale ? "bg-blue-500/30" : "bg-fuchsia-500/28"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      x: [0, 34, -12, 0],
+                      y: [0, 22, 48, 0],
+                      scale: [1, 1.08, 0.96, 1],
+                    }
+              }
+              transition={{
+                duration: 14,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className={cn(
+                "absolute top-[28%] -right-32 size-[28rem] rounded-full blur-[110px]",
+                isMale ? "bg-cyan-400/22" : "bg-rose-400/24"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      x: [0, -46, 10, 0],
+                      y: [0, 42, -18, 0],
+                      scale: [1, 0.94, 1.07, 1],
+                    }
+              }
+              transition={{
+                duration: 17,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className={cn(
+                "absolute -bottom-40 left-[18%] size-[30rem] rounded-full blur-[120px]",
+                isMale ? "bg-violet-500/24" : "bg-amber-400/18"
+              )}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : { x: [0, 54, -24, 0], y: [0, -28, 8, 0] }
+              }
+              transition={{
+                duration: 19,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-[1] h-2 bg-[var(--app-shell)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-2 bg-[var(--app-shell)]"
+        aria-hidden
+      />
+    </>
   )
 }
 

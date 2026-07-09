@@ -6,6 +6,11 @@ import { env } from "@/lib/env"
 export const metadata: Metadata = {
   title: env.NEXT_PUBLIC_APP_NAME,
   description: env.NEXT_PUBLIC_APP_TAGLINE,
+  appleWebApp: {
+    capable: true,
+    title: env.NEXT_PUBLIC_APP_NAME,
+    statusBarStyle: "black-translucent",
+  },
 }
 
 export default function Page() {
