@@ -291,167 +291,199 @@ export const MALE_TRANSLATIONS: MaleTranslation[] = [
 export const FEMALE_TRANSLATIONS: FemaleTranslation[] = [
   {
     pattern: "i'm fine",
-    translation:
-      "Something is wrong. Ask one thoughtful follow-up question, then listen.",
-    spicyTranslation:
-      "This is an emotional fire alarm. Do not explain why the building is technically still standing.",
+    translation: "Not fine.",
+    spicyTranslation: "Run.",
     category: "emotions",
     confidence: 149,
   },
   {
     pattern: "im fine",
-    translation:
-      "Something is wrong. Ask one thoughtful follow-up question, then listen.",
+    translation: "Not fine.",
+    spicyTranslation: "Run.",
     category: "emotions",
     confidence: 149,
   },
   {
     pattern: "it's fine",
-    translation:
-      "It is not fine, but the conversation has been temporarily adjourned.",
-    spicyTranslation:
-      "The issue has entered long-term storage and will be retrieved with receipts.",
+    translation: "It's not.",
+    spicyTranslation: "Lawyer up.",
     category: "emotions",
     confidence: 146,
   },
   {
     pattern: "its fine",
-    translation:
-      "It is not fine, but the conversation has been temporarily adjourned.",
+    translation: "It's not.",
+    spicyTranslation: "Lawyer up.",
     category: "emotions",
     confidence: 146,
   },
   {
     pattern: "nothing",
-    translation:
-      "There is definitely something. Create space for her to say it without guessing.",
+    translation: "Everything.",
+    spicyTranslation: "EVERYTHING.",
     category: "emotions",
     confidence: 141,
   },
   {
     pattern: "do whatever you want",
-    translation:
-      "You may choose freely, but your choice will reveal whether you understood the assignment.",
-    spicyTranslation:
-      "This is not permission. This is the final question on an exam you forgot to study for.",
+    translation: "Trap.",
+    spicyTranslation: "Choose death.",
     category: "relationship",
     confidence: 192,
   },
   {
     pattern: "sure",
-    translation:
-      "I acknowledge your proposal. Enthusiasm has not been included.",
+    translation: "No.",
+    spicyTranslation: "Hard no.",
     category: "texting",
     confidence: 128,
   },
   {
     pattern: "okay",
-    translation:
-      "Message received. Further emotional processing is happening off-screen.",
+    translation: "Not okay.",
+    spicyTranslation: "We're done.",
     category: "texting",
     confidence: 132,
   },
   {
     pattern: "we need to talk",
-    translation:
-      "Please give me your full attention. This matters, and multitasking will make it worse.",
-    spicyTranslation:
-      "Pause the game, close the laptop, and prepare to discover a plotline you somehow missed.",
+    translation: "Uh oh.",
+    spicyTranslation: "You died.",
     category: "relationship",
     confidence: 176,
   },
   {
     pattern: "i don't care",
-    translation: "I care, but I am tired of carrying the entire decision.",
+    translation: "She cares.",
+    spicyTranslation: "She cares.",
     category: "emotions",
     confidence: 139,
   },
   {
     pattern: "i dont care",
-    translation: "I care, but I am tired of carrying the entire decision.",
+    translation: "She cares.",
+    spicyTranslation: "She cares.",
     category: "emotions",
     confidence: 139,
   },
   {
     pattern: "you should know",
-    translation:
-      "I wanted you to notice without needing a detailed instruction manual.",
-    spicyTranslation:
-      "The clues were highlighted, underlined, and delivered to your home address.",
+    translation: "You don't.",
+    spicyTranslation: "Clueless.",
     category: "relationship",
     confidence: 158,
   },
   {
     pattern: "i'm not mad",
-    translation:
-      "I may not be angry, but I am disappointed and would like acknowledgment.",
+    translation: "She's mad.",
+    spicyTranslation: "Nuclear.",
     category: "emotions",
     confidence: 151,
   },
   {
     pattern: "im not mad",
-    translation:
-      "I may not be angry, but I am disappointed and would like acknowledgment.",
+    translation: "She's mad.",
+    spicyTranslation: "Nuclear.",
     category: "emotions",
     confidence: 151,
   },
   {
     pattern: "five minutes",
-    translation:
-      "I need a little more time. Please stop asking for minute-by-minute telemetry.",
+    translation: "One hour.",
+    spicyTranslation: "Never.",
     category: "plans",
     confidence: 137,
   },
   {
     pattern: "i'll be ready soon",
-    translation:
-      "I am actively getting ready. The departure time remains a flexible estimate.",
+    translation: "She's not.",
+    spicyTranslation: "Still bed.",
     category: "plans",
     confidence: 143,
   },
   {
     pattern: "ill be ready soon",
-    translation:
-      "I am actively getting ready. The departure time remains a flexible estimate.",
+    translation: "She's not.",
+    spicyTranslation: "Still bed.",
     category: "plans",
     confidence: 143,
   },
   {
     pattern: "don't worry about it",
-    translation:
-      "Please worry about it enough to take responsibility without being managed.",
-    spicyTranslation:
-      "I have promoted myself from project manager to silent observer. Your performance review is pending.",
+    translation: "Worry.",
+    spicyTranslation: "PANIC.",
     category: "relationship",
     confidence: 164,
   },
   {
     pattern: "dont worry about it",
-    translation:
-      "Please worry about it enough to take responsibility without being managed.",
+    translation: "Worry.",
+    spicyTranslation: "PANIC.",
     category: "relationship",
     confidence: 164,
   },
   {
     pattern: "sorry",
-    translation:
-      "I value the relationship and want us to repair this, not pretend it did not happen.",
+    translation: "Not forgiven.",
+    spicyTranslation: "Couch tonight.",
     category: "apology",
     confidence: 124,
   },
   {
     pattern: "maybe",
-    translation:
-      "I am not convinced. More information or a better plan may change the answer.",
+    translation: "No.",
+    spicyTranslation: "Absolutely not.",
     category: "plans",
     confidence: 126,
   },
   {
     pattern: "have fun",
-    translation:
-      "Enjoy yourself, and also remember that consideration still applies while I am not there.",
+    translation: "Don't.",
+    spicyTranslation: "Don't breathe.",
     category: "relationship",
     confidence: 135,
+  },
+  {
+    pattern: "i'm tired",
+    translation: "You're tired.",
+    spicyTranslation: "Of you.",
+    category: "emotions",
+    confidence: 138,
+  },
+  {
+    pattern: "im tired",
+    translation: "You're tired.",
+    spicyTranslation: "Of you.",
+    category: "emotions",
+    confidence: 138,
+  },
+  {
+    pattern: "never mind",
+    translation: "Remember it.",
+    spicyTranslation: "Remember EVERYTHING.",
+    category: "classic",
+    confidence: 155,
+  },
+  {
+    pattern: "nevermind",
+    translation: "Remember it.",
+    spicyTranslation: "Remember EVERYTHING.",
+    category: "classic",
+    confidence: 155,
+  },
+  {
+    pattern: "per my last email",
+    translation: "Read it.",
+    spicyTranslation: "Illiterate.",
+    category: "texting",
+    confidence: 167,
+  },
+  {
+    pattern: "if you wanted to",
+    translation: "You should.",
+    spicyTranslation: "You failed.",
+    category: "relationship",
+    confidence: 161,
   },
 ]
 
@@ -466,11 +498,11 @@ export const SAMPLE_PHRASES = [
 
 export const FEMALE_SAMPLE_PHRASES = [
   "I'm fine",
-  "It's fine",
   "Do whatever you want",
   "We need to talk",
-  "Nothing",
-  "Sure",
+  "I just think it's funny how you never listen when I talk about my day but then you wonder why I'm quiet",
+  "Never mind",
+  "Per my last email",
 ] as const
 
 export const LOADING_MESSAGES = [
@@ -485,12 +517,13 @@ export const LOADING_MESSAGES = [
 ] as const
 
 export const FEMALE_LOADING_MESSAGES = [
-  "Reading between all available lines…",
-  "Checking tone, timing, and punctuation…",
-  "Consulting the group chat archives…",
-  "Separating words from subtext…",
-  "Reviewing the emotional footnotes…",
-  "Locating the detail you were supposed to notice…",
+  "Condensing 400 words…",
+  "TL;DR-ing the monologue…",
+  "Extracting one word…",
+  "Skipping to the point…",
+  "Consulting the group chat…",
+  "Finding the real headline…",
+  "Compressing the essay…",
 ] as const
 
 export const FALLBACK_TRANSLATIONS = [
@@ -502,10 +535,34 @@ export const FALLBACK_TRANSLATIONS = [
 ] as const
 
 export const FEMALE_FALLBACK_TRANSLATIONS = [
-  "No exact match. Ask what she means, then listen to the answer.",
-  "Subtext inconclusive. Context and a sincere follow-up question are required.",
-  "Translation unavailable. Do not guess when direct communication is still an option.",
-  "Insufficient context. Tone and timing may contain the missing information.",
+  "It's fine.",
+  "Whatever.",
+  "K.",
+  "Sure.",
+  "Anyway.",
+  "Noted.",
+  "Go ahead.",
+  "I'm listening.",
+  "Do better.",
+] as const
+
+/** Ultra-short decodes when she talked forever */
+export const FEMALE_LONG_INPUT_TRANSLATIONS = [
+  "I'm fine.",
+  "K.",
+  "Whatever.",
+  "Sure.",
+  "Anyway.",
+  "Not mad.",
+  "It's fine.",
+  "Go ahead.",
+  "You forgot.",
+  "Do better.",
+  "I'm tired.",
+  "Pick one.",
+  "Remember that.",
+  "Wow.",
+  "Interesting.",
 ] as const
 
 export const GRUNT_ANNOTATIONS = [
