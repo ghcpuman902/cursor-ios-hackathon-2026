@@ -28,11 +28,12 @@ export default function Page() {
             this page with your app.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
             Run <code className="text-foreground">pnpm dev</code> to start the
             dev server. Press <kbd>d</kbd> to toggle dark mode.
           </p>
+          <p>Deployed to Vercel.</p>
         </CardContent>
       </Card>
     </main>
