@@ -39,10 +39,9 @@ import {
   translateMale,
   translateFemale,
   type TranslationResult,
+  type TranslatorGender,
 } from "@/lib/translator"
 import { cn } from "@/lib/utils"
-
-type TranslatorGender = "male" | "female"
 
 const GENDER_CONFIG = {
   male: {
@@ -462,7 +461,7 @@ export function MaleTranslator({
       const response = await fetch("/api/speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: result.translation }),
+        body: JSON.stringify({ text: result.translation, gender }),
       })
 
       if (!response.ok) {
@@ -850,6 +849,9 @@ export function MaleTranslator({
                     </Badge>
                     <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 font-mono text-[10px] text-secondary-foreground hover:bg-secondary">
                       {result.confidence}%
+                    </Badge>
+                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
+                      {result.source === "ai" ? "✨ AI remix" : "📖 Dictionary"}
                     </Badge>
                   </div>
 

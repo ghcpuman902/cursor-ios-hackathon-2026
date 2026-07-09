@@ -11,6 +11,8 @@ import {
   type TranslationCategory,
 } from "@/lib/translations"
 
+export type TranslatorGender = "male" | "female"
+
 export type TranslationOptions = {
   sarcasmLevel: number
   gruntMode: boolean
@@ -141,10 +143,11 @@ export const translateFemale = (
     input,
     { ...options, gruntMode: false },
     {
-    entries: FEMALE_TRANSLATIONS,
-    fallbackTranslations: fallbackPool,
-    emptyTranslation: "…",
-  })
+      entries: FEMALE_TRANSLATIONS,
+      fallbackTranslations: fallbackPool,
+      emptyTranslation: "…",
+    }
+  )
 
   if (result.isFallback && isLongInput) {
     return {

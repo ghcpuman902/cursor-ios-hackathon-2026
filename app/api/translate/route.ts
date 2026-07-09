@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const enhanced = await enhanceTranslation(baseline, sarcasmLevel)
+    const enhanced = await enhanceTranslation(baseline, gender, sarcasmLevel)
     return NextResponse.json(enhanced)
   } catch (error) {
     console.error("AI translation enhancement failed:", error)

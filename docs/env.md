@@ -2,11 +2,11 @@
 
 ## Files
 
-| File | Committed | Purpose |
-|------|-----------|---------|
-| `.env.example` | Yes | Documented placeholders for collaborators |
-| `.env.local` | No | Local secrets and overrides |
-| `.env.*.local` | No | Environment-specific local overrides |
+| File           | Committed | Purpose                                   |
+| -------------- | --------- | ----------------------------------------- |
+| `.env.example` | Yes       | Documented placeholders for collaborators |
+| `.env.local`   | No        | Local secrets and overrides               |
+| `.env.*.local` | No        | Environment-specific local overrides      |
 
 ## Local setup
 
@@ -26,7 +26,10 @@ fall back to that result if Gateway generation is unavailable.
 - Local development uses `AI_GATEWAY_API_KEY`. Create a key in the
   [AI Gateway dashboard](https://vercel.com/ai-gateway) and add it to
   `.env.local`.
-- Optional model and voice overrides are documented in `.env.example`.
+- Male and female satire modes default to the `onyx` and `nova` speech voices.
+  Override them independently, or set `AI_GATEWAY_SPEECH_VOICE` to force one
+  voice for both modes. All model and voice overrides are documented in
+  `.env.example`.
 
 ## Next.js conventions
 

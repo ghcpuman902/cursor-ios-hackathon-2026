@@ -9,6 +9,7 @@ export const runtime = "nodejs"
 
 const speechRequestSchema = z.object({
   text: z.string().trim().min(1).max(1000),
+  gender: z.enum(["male", "female"]).default("male"),
 })
 
 export async function POST(request: Request) {
@@ -35,12 +36,21 @@ export async function POST(request: Request) {
       )
     }
 
-    const { AI_GATEWAY_SPEECH_VOICE } = getServerEnv()
+    const {
+      AI_GATEWAY_SPEECH_VOICE,
+      AI_GATEWAY_MALE_SPEECH_VOICE,
+      AI_GATEWAY_FEMALE_SPEECH_VOICE,
+    } = getServerEnv()
+    const voice =
+      AI_GATEWAY_SPEECH_VOICE ??
+      (body.data.gender === "female"
+        ? AI_GATEWAY_FEMALE_SPEECH_VOICE
+        : AI_GATEWAY_MALE_SPEECH_VOICE)
 
     const speech = await generateSpeech({
       model: getSpeechModel(),
       text: body.data.text,
-      voice: AI_GATEWAY_SPEECH_VOICE,
+      voice,
       outputFormat: "mp3",
       abortSignal: AbortSignal.timeout(30_000),
     })

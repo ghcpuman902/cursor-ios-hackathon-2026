@@ -150,7 +150,7 @@ export async function POST(request: Request) {
       gender === "female"
         ? translateFemale(otherPersonText, { sarcasmLevel, gruntMode })
         : translateMale(otherPersonText, { sarcasmLevel, gruntMode })
-    const enhanced = await enhanceTranslation(baseline, sarcasmLevel, {
+    const enhanced = await enhanceTranslation(baseline, gender, sarcasmLevel, {
       conversationSummary: conversation.conversationSummary,
       screenshotOwnerMessages: conversation.screenshotOwnerMessages,
     })

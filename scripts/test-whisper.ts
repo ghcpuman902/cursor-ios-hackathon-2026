@@ -1,11 +1,6 @@
-import { readFile } from "node:fs/promises"
-import { resolve } from "node:path"
-
-import { generateSpeech } from "ai"
-
-import { getSpeechModel } from "../lib/ai"
-import { getServerEnv, isAudioConfigured } from "../lib/server-env"
+import { isAudioConfigured } from "../lib/server-env"
 import { transcribeAudioBuffer } from "../lib/transcribe-audio"
+import type { TranslatorGender } from "../lib/translator"
 
 const createTestWav = () => {
   const sampleRate = 16_000
@@ -31,6 +26,37 @@ const createTestWav = () => {
   return new Uint8Array(buffer)
 }
 
+const requestSpeech = async (
+  gender: TranslatorGender,
+  text: string
+): Promise<Uint8Array> => {
+  const { POST } = await import("../app/api/speech/route")
+  const response = await POST(
+    new Request("http://localhost/api/speech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gender, text }),
+    })
+  )
+
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: string }
+    throw new Error(body.error ?? `Speech route returned ${response.status}`)
+  }
+
+  if (!response.headers.get("content-type")?.startsWith("audio/")) {
+    throw new Error("Speech route did not return audio")
+  }
+
+  const audio = new Uint8Array(await response.arrayBuffer())
+
+  if (audio.byteLength === 0) {
+    throw new Error("Speech route returned empty audio")
+  }
+
+  return audio
+}
+
 const runLiveVoiceCheck = async () => {
   if (!isAudioConfigured()) {
     console.log(
@@ -39,29 +65,24 @@ const runLiveVoiceCheck = async () => {
     return
   }
 
-  const fixturePath = resolve("scripts/fixtures/grunt-sample.wav")
-  let audio: Uint8Array | undefined
+  let maleAudio: Uint8Array | undefined
 
-  try {
-    audio = new Uint8Array(await readFile(fixturePath))
-  } catch {
-    console.log("ℹ No voice fixture found — generating one through AI Gateway")
+  for (const gender of ["male", "female"] as const) {
+    const audio = await requestSpeech(
+      gender,
+      gender === "male"
+        ? "Bro deployed the affirmative grunt."
+        : "The group chat has entered forensic mode."
+    )
+    maleAudio ??= audio
+    console.log(`✓ Live AI Gateway ${gender} speech generation succeeded`)
   }
 
-  if (!audio) {
-    const { AI_GATEWAY_SPEECH_VOICE } = getServerEnv()
-    const speech = await generateSpeech({
-      model: getSpeechModel(),
-      text: "AI Gateway voice test.",
-      voice: AI_GATEWAY_SPEECH_VOICE,
-      outputFormat: "mp3",
-      abortSignal: AbortSignal.timeout(30_000),
-    })
-    audio = speech.audio.uint8Array
-    console.log("✓ Live AI Gateway speech generation succeeded")
+  if (!maleAudio) {
+    throw new Error("Male speech generation did not return audio")
   }
 
-  const transcript = await transcribeAudioBuffer(audio)
+  const transcript = await transcribeAudioBuffer(maleAudio)
 
   console.log("✓ Live AI Gateway transcription succeeded")
   console.log(`  text: ${transcript.text || "(empty)"}`)
@@ -79,6 +100,7 @@ const runRouteChecks = async () => {
 
   try {
     const { POST } = await import("../app/api/transcribe/route")
+    const { POST: POSTSpeech } = await import("../app/api/speech/route")
     const wav = createTestWav()
     const formData = new FormData()
     formData.append(
@@ -109,6 +131,22 @@ const runRouteChecks = async () => {
     }
 
     console.log("✓ /api/transcribe returns 503 without Gateway authentication")
+
+    const speechResponse = await POSTSpeech(
+      new Request("http://localhost/api/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "Test", gender: "female" }),
+      })
+    )
+
+    if (speechResponse.status !== 503) {
+      throw new Error(
+        `Expected speech 503 without Gateway authentication, got ${speechResponse.status}`
+      )
+    }
+
+    console.log("✓ /api/speech returns 503 without Gateway authentication")
   } finally {
     if (previousApiKey) {
       process.env.AI_GATEWAY_API_KEY = previousApiKey

@@ -7,7 +7,9 @@ const serverEnvSchema = z
     AI_GATEWAY_TEXT_MODEL: z.string().default("openai/gpt-5.6-sol"),
     AI_GATEWAY_TRANSCRIPTION_MODEL: z.string().default("openai/whisper-1"),
     AI_GATEWAY_SPEECH_MODEL: z.string().default("openai/tts-1"),
-    AI_GATEWAY_SPEECH_VOICE: z.string().default("alloy"),
+    AI_GATEWAY_SPEECH_VOICE: z.string().min(1).optional(),
+    AI_GATEWAY_MALE_SPEECH_VOICE: z.string().default("onyx"),
+    AI_GATEWAY_FEMALE_SPEECH_VOICE: z.string().default("nova"),
   })
   .refine(
     ({ AI_GATEWAY_API_KEY, VERCEL_OIDC_TOKEN }) =>
@@ -27,6 +29,8 @@ const readServerEnvInput = () => ({
   AI_GATEWAY_TRANSCRIPTION_MODEL: process.env.AI_GATEWAY_TRANSCRIPTION_MODEL,
   AI_GATEWAY_SPEECH_MODEL: process.env.AI_GATEWAY_SPEECH_MODEL,
   AI_GATEWAY_SPEECH_VOICE: process.env.AI_GATEWAY_SPEECH_VOICE,
+  AI_GATEWAY_MALE_SPEECH_VOICE: process.env.AI_GATEWAY_MALE_SPEECH_VOICE,
+  AI_GATEWAY_FEMALE_SPEECH_VOICE: process.env.AI_GATEWAY_FEMALE_SPEECH_VOICE,
 })
 
 let cachedServerEnv: ServerEnv | null = null
