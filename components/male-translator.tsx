@@ -95,7 +95,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
           <motion.div
             className={cn(
               "absolute -top-28 -left-24 size-96 rounded-full blur-[90px]",
-              isMale ? "bg-sky-300/45" : "bg-rose-300/45"
+              isMale ? "bg-blue-500/30" : "bg-fuchsia-500/28"
             )}
             animate={
               reduceMotion
@@ -111,7 +111,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
           <motion.div
             className={cn(
               "absolute top-[28%] -right-32 size-[28rem] rounded-full blur-[110px]",
-              isMale ? "bg-indigo-300/35" : "bg-fuchsia-300/35"
+              isMale ? "bg-cyan-400/22" : "bg-rose-400/24"
             )}
             animate={
               reduceMotion
@@ -127,7 +127,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
           <motion.div
             className={cn(
               "absolute -bottom-40 left-[18%] size-[30rem] rounded-full blur-[120px]",
-              isMale ? "bg-cyan-200/40" : "bg-amber-200/40"
+              isMale ? "bg-violet-500/24" : "bg-amber-400/18"
             )}
             animate={
               reduceMotion
@@ -400,19 +400,10 @@ export function MaleTranslator({
       <DynamicGenderBackground gender={gender} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col gap-6">
-        <header className="space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                {appName}
-              </h1>
-              <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-                {tagline}
-              </p>
-            </div>
-
+        <header className="relative space-y-5 pt-12 text-center sm:pt-10">
+          <div className="absolute top-0 right-0">
             <div
-              className="flex shrink-0 rounded-full border border-white/90 bg-white/65 p-1 shadow-sm backdrop-blur-xl"
+              className="flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
               role="tablist"
               aria-label="Translator gender"
             >
@@ -425,10 +416,10 @@ export function MaleTranslator({
                   onClick={() => handleGenderChange(mode)}
                   disabled={isBusy}
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:text-sm",
+                    "rounded-full px-2.5 py-1 text-[11px] font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:px-3",
                     gender === mode
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:bg-white/70 hover:text-foreground"
+                      ? "bg-white/16 text-white shadow-sm"
+                      : "text-white/45 hover:bg-white/8 hover:text-white/75"
                   )}
                 >
                   {mode === "male" ? "Male" : "Female"}
@@ -437,14 +428,23 @@ export function MaleTranslator({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="rounded-full border-white/90 bg-white/65 text-foreground/75 shadow-sm backdrop-blur-xl hover:bg-white/65">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              {appName}
+            </h1>
+            <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
+              {tagline}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Badge className="rounded-full border-white/12 bg-white/[0.08] text-white/75 shadow-sm backdrop-blur-xl hover:bg-white/[0.08]">
               Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
             </Badge>
             {gruntMode && (
               <Badge
                 variant="outline"
-                className="rounded-full border-white/90 bg-white/45 text-muted-foreground backdrop-blur-xl"
+                className="rounded-full border-white/12 bg-white/[0.06] text-white/60 backdrop-blur-xl"
               >
                 Grunt mode
               </Badge>
@@ -452,37 +452,37 @@ export function MaleTranslator({
           </div>
         </header>
 
-        <GlassPanel variant="strong" className="overflow-hidden">
-          <div
-            className="grid grid-cols-2 border-b border-border/60 bg-white/35 p-2"
-            role="tablist"
-            aria-label="Input method"
-          >
-            {(["voice", "type"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                role="tab"
-                aria-selected={viewMode === mode}
-                onClick={() => setViewMode(mode)}
-                disabled={isRecorderBusy}
-                className={cn(
-                  "flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50",
-                  viewMode === mode
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-white/55 hover:text-foreground"
-                )}
-              >
-                {mode === "voice" ? (
-                  <Mic className="size-4" aria-hidden />
-                ) : (
-                  <Keyboard className="size-4" aria-hidden />
-                )}
-                {mode === "voice" ? "Voice" : "Type"}
-              </button>
-            ))}
-          </div>
+        <div
+          className="grid grid-cols-2 rounded-full border border-white/12 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+          role="tablist"
+          aria-label="Input method"
+        >
+          {(["voice", "type"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === mode}
+              onClick={() => setViewMode(mode)}
+              disabled={isRecorderBusy}
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50",
+                viewMode === mode
+                  ? "bg-white/16 text-white shadow-sm"
+                  : "text-white/45 hover:bg-white/[0.06] hover:text-white/75"
+              )}
+            >
+              {mode === "voice" ? (
+                <Mic className="size-4" aria-hidden />
+              ) : (
+                <Keyboard className="size-4" aria-hidden />
+              )}
+              {mode === "voice" ? "Voice" : "Type"}
+            </button>
+          ))}
+        </div>
 
+        <GlassPanel variant="strong" className="overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={viewMode}
@@ -559,7 +559,7 @@ export function MaleTranslator({
                       }
                     }}
                     rows={4}
-                    className="min-h-28 resize-none rounded-2xl border-border/70 bg-white/55 text-foreground placeholder:text-muted-foreground/65 focus-visible:border-ring focus-visible:ring-ring/20"
+                    className="min-h-32 resize-none rounded-2xl border-white/12 bg-white/[0.06] text-foreground placeholder:text-muted-foreground/65 focus-visible:border-white/25 focus-visible:ring-white/10"
                     disabled={isBusy}
                   />
 
@@ -569,7 +569,7 @@ export function MaleTranslator({
                         key={phrase}
                         variant="outline"
                         size="sm"
-                        className="rounded-full border-border/70 bg-white/50 text-foreground/70 hover:bg-white hover:text-foreground"
+                        className="rounded-full border-white/12 bg-white/[0.06] text-white/70 hover:bg-white/12 hover:text-white"
                         onClick={() => handleSample(phrase)}
                         disabled={isBusy}
                       >
@@ -619,7 +619,7 @@ export function MaleTranslator({
               className="space-y-3"
             >
               <div className="flex justify-start">
-                <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/90 bg-white/60 px-4 py-3 text-sm text-foreground/80 shadow-sm backdrop-blur-xl">
+                <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/12 bg-white/[0.08] px-4 py-3 text-sm text-foreground/80 shadow-sm backdrop-blur-xl">
                   <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     {genderConfig.subjectLabel}
                   </p>

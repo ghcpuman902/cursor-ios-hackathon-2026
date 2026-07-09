@@ -48,8 +48,8 @@
 }
 
 :root {
-  --app-shell: #f8fafc;
-  --app-shell-highlight: #ffffff;
+  --app-shell: #171724;
+  --app-shell-highlight: #252439;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -85,8 +85,8 @@
 }
 
 .dark {
-  --app-shell: #0e0e10;
-  --app-shell-highlight: #16161a;
+  --app-shell: #171724;
+  --app-shell-highlight: #252439;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -143,14 +143,14 @@
     background-image: linear-gradient(
       180deg,
       var(--app-shell-highlight) 0%,
-      var(--app-shell) 45%,
+      var(--app-shell) 38%,
       var(--app-shell) 100%
     );
   }
 
   .glass-ring {
     box-shadow:
-      0 0 0 1px rgba(15, 23, 42, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 }

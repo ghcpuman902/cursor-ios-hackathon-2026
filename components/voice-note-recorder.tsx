@@ -37,7 +37,7 @@ export function VoiceNoteRecorder({
 
   return (
     <section className="overflow-hidden" aria-label="Voice capture">
-      <div className="border-b border-border/70 bg-white/35 px-5 py-4">
+      <div className="border-b border-white/10 bg-white/[0.04] px-5 py-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
@@ -54,7 +54,7 @@ export function VoiceNoteRecorder({
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-7 px-5 py-8">
+      <div className="flex flex-col items-center gap-8 px-5 py-9">
         <div className="flex items-center gap-3">
           {isRecording && (
             <span className="relative flex size-2.5">
@@ -67,7 +67,7 @@ export function VoiceNoteRecorder({
           </span>
         </div>
 
-        <div className="glass-ring w-full rounded-2xl border border-border/70 bg-white/45 px-3 py-4">
+        <div className="glass-ring w-full rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-5">
           <VoiceNoteWaveform
             samples={waveformHistory}
             liveLevels={liveLevels}
@@ -76,7 +76,7 @@ export function VoiceNoteRecorder({
         </div>
 
         {transcript?.trim() ? (
-          <div className="w-full rounded-2xl border border-border/70 bg-white/45 px-4 py-3 text-left">
+          <div className="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left">
             <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
               Transcribed
             </p>

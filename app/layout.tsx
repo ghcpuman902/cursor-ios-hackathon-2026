@@ -15,7 +15,7 @@ const fontMono = Geist_Mono({
 })
 
 export const viewport: Viewport = {
-  themeColor: "#f8fafc",
+  themeColor: "#171724",
   viewportFit: "cover",
 }
 
@@ -29,14 +29,14 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-        "antialiased",
+        "dark antialiased",
         fontMono.variable,
         "font-sans",
         geist.variable
       )}
     >
       <body className="app-shell-bg">
-        <ThemeProvider forcedTheme="light">
+        <ThemeProvider forcedTheme="dark">
           <TooltipProvider>
             {children}
             <Toaster />
