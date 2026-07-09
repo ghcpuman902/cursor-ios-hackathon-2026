@@ -1,14 +1,52 @@
-import { transcribe } from "ai"
+import { APICallError, NoTranscriptGeneratedError } from "ai"
 import { NextResponse } from "next/server"
 
-import { openai } from "@/lib/ai"
-import { serverEnv } from "@/lib/server-env"
+import { isAudioConfigured } from "@/lib/server-env"
+import { transcribeAudioBuffer } from "@/lib/transcribe-audio"
 
 export const runtime = "nodejs"
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
+const getTranscriptionErrorMessage = (error: unknown) => {
+  if (NoTranscriptGeneratedError.isInstance(error)) {
+    return "Could not detect speech in the recording."
+  }
+
+  if (APICallError.isInstance(error)) {
+    const apiError = error
+
+    if (apiError.statusCode === 401) {
+      return "OpenAI API key is invalid. Check OPENAI_API_KEY on the server."
+    }
+
+    if (apiError.statusCode === 429) {
+      return "OpenAI rate limit reached. Try again in a moment."
+    }
+
+    if (apiError.message) {
+      return apiError.message
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return "Failed to transcribe audio. Try again or type the grunt manually."
+}
+
 export async function POST(request: Request) {
+  if (!isAudioConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Audio transcription is not configured. Set OPENAI_API_KEY on the server.",
+      },
+      { status: 503 },
+    )
+  }
+
   try {
     const formData = await request.formData()
     const audio = formData.get("audio")
@@ -31,33 +69,23 @@ export async function POST(request: Request) {
       )
     }
 
-    const audioBuffer = Buffer.from(await audio.arrayBuffer())
-
-    const transcript = await transcribe({
-      model: openai.transcription(serverEnv.OPENAI_TRANSCRIPTION_MODEL),
-      audio: audioBuffer,
-      abortSignal: AbortSignal.timeout(30_000),
-    })
-
-    const text = transcript.text.trim()
-
-    if (!text) {
-      return NextResponse.json(
-        { error: "Could not detect speech in the recording." },
-        { status: 422 },
-      )
-    }
+    const audioBuffer = new Uint8Array(await audio.arrayBuffer())
+    const transcript = await transcribeAudioBuffer(
+      audioBuffer,
+      audio.type || undefined,
+    )
 
     return NextResponse.json({
-      text,
-      language: transcript.language ?? null,
-      durationInSeconds: transcript.durationInSeconds ?? null,
+      text: transcript.text,
+      language: transcript.language,
+      durationInSeconds: transcript.durationInSeconds,
     })
   } catch (error) {
     console.error("Transcription failed:", error)
-    return NextResponse.json(
-      { error: "Failed to transcribe audio. Try again or type the grunt manually." },
-      { status: 500 },
-    )
+
+    const message = getTranscriptionErrorMessage(error)
+    const status = NoTranscriptGeneratedError.isInstance(error) ? 422 : 500
+
+    return NextResponse.json({ error: message }, { status })
   }
 }

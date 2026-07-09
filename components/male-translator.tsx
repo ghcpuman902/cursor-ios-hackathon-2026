@@ -90,8 +90,14 @@ export function MaleTranslator({
 
   const transcribeAudio = useCallback(
     async (blob: Blob) => {
+      const extension = blob.type.includes("mp4")
+        ? "m4a"
+        : blob.type.includes("ogg")
+          ? "ogg"
+          : "webm"
+
       const formData = new FormData()
-      formData.append("audio", blob, "grunt.webm")
+      formData.append("audio", blob, `grunt.${extension}`)
 
       const response = await fetch("/api/transcribe", {
         method: "POST",
