@@ -2,6 +2,8 @@
 
 Next.js hackathon project, bootstrapped from the agent-friendly nextjs-starter template.
 
+Live app: [male-translator.vercel.app](https://male-translator.vercel.app)
+
 ## Stack
 
 - **Next.js 16** (App Router)
