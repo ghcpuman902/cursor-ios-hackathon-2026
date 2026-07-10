@@ -897,10 +897,10 @@ export const FEMALE_TRANSLATIONS: FemaleTranslation[] = [
     spicyComicTranslation:
       "Choose carefully. 'Whatever' is not free will.",
     possibleActualMeaning:
-      "She may want you to pick the caring option without being told.",
+      "She wants you to pick the caring option without her spelling it out.",
     riskLevel: "high",
     lowestRiskReply: "I want what keeps us good — what would feel best to you?",
-    tinyWholesomeNudge: "Pause, feed party, retry later if spicy.",
+    tinyWholesomeNudge: "Pause, grab food, try again later if it gets spicy.",
     category: "relationship",
   },
   {

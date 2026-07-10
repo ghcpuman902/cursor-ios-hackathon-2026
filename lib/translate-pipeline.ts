@@ -19,6 +19,7 @@ import { isGatewayConfigured } from "@/lib/server-env"
 import type { TranslationDirection } from "@/lib/translation-types"
 import {
   buildFootnotePrompt,
+  buildLocalScreenshotNotes,
   buildLocalSupportingFootnote,
   buildLongAnalysisPrompt,
   buildPhraseExtractionPrompt,
@@ -396,6 +397,12 @@ const buildLongAnalysisWithAi = async (params: {
   }
 }
 
+type ScreenshotNotesResult = {
+  screenshotNotes: string[]
+  relationshipToDictionary: TranslationAnalysis["relationshipToDictionary"]
+  contextConflict: boolean
+}
+
 const buildScreenshotNotesWithAi = async (params: {
   direction: TranslationDirection
   sarcasmLevel: number
@@ -404,11 +411,7 @@ const buildScreenshotNotesWithAi = async (params: {
   screenshotMessages: ScreenshotMessage[]
   translatedPhrase: string
   dictionary: DictionaryTranslationContext
-}): Promise<{
-  screenshotNotes: string[]
-  relationshipToDictionary: TranslationAnalysis["relationshipToDictionary"]
-  contextConflict: boolean
-}> => {
+}): Promise<ScreenshotNotesResult | null> => {
   const result = await generateText({
     model: getTextModel(),
     output: Output.object({ schema: screenshotNotesSchema }),
@@ -421,15 +424,22 @@ const buildScreenshotNotesWithAi = async (params: {
         dictionary: params.dictionary,
         direction: params.direction,
         extra: {
-          conversationSummary: params.conversationSummary,
-          screenshotOwnerMessages: params.screenshotOwnerMessages,
-          screenshotMessages: params.screenshotMessages,
-          translatedPhrase: params.translatedPhrase,
+          conversationSummary: params.conversationSummary.slice(0, 500),
+          screenshotOwnerMessages: params.screenshotOwnerMessages
+            .slice(0, 8)
+            .map((message) => message.slice(0, 200)),
+          screenshotMessages: params.screenshotMessages
+            .slice(0, 12)
+            .map((message) => ({
+              ...message,
+              text: message.text.slice(0, 200),
+            })),
+          translatedPhrase: params.translatedPhrase.slice(0, 200),
         },
       })
     ),
-    maxOutputTokens: 400,
-    abortSignal: AbortSignal.timeout(15_000),
+    maxOutputTokens: 512,
+    abortSignal: AbortSignal.timeout(20_000),
     providerOptions: {
       gateway: {
         tags: ["feature:screenshot-notes"],
@@ -441,11 +451,35 @@ const buildScreenshotNotesWithAi = async (params: {
     () => result.output,
     "Screenshot notes"
   )
-  if (!output) {
-    throw new Error("Screenshot notes returned no output.")
+  if (!output?.screenshotNotes?.length) {
+    return null
   }
 
   return output
+}
+
+const resolveScreenshotNotes = async (params: {
+  direction: TranslationDirection
+  sarcasmLevel: number
+  conversationSummary: string
+  screenshotOwnerMessages: string[]
+  screenshotMessages: ScreenshotMessage[]
+  translatedPhrase: string
+  dictionary: DictionaryTranslationContext
+}): Promise<ScreenshotNotesResult> => {
+  try {
+    const notes = await buildScreenshotNotesWithAi(params)
+    if (notes) {
+      return notes
+    }
+  } catch (error) {
+    console.error("Screenshot notes failed:", error)
+  }
+
+  return buildLocalScreenshotNotes({
+    direction: params.direction,
+    dictionary: params.dictionary,
+  })
 }
 
 const attachFootnoteOrFallback = async (params: {
@@ -468,9 +502,7 @@ const attachFootnoteOrFallback = async (params: {
     isFallback: params.baseline.isFallback,
   })
   const localEnhancement: AiEnhancement = {
-    type: params.baseline.isFallback
-      ? "alternate_reading"
-      : "overthinking_check",
+    type: params.baseline.isFallback ? "alternate_reading" : "timing_check",
     text: localFootnote,
     relationshipToDictionary: params.baseline.isFallback
       ? "adds_context"
@@ -581,23 +613,19 @@ export const runTranslatePipeline = async (
     })
 
     if (image && conversationSummary && gatewayReady) {
-      try {
-        const notes = await buildScreenshotNotesWithAi({
-          direction,
-          sarcasmLevel,
-          conversationSummary,
-          screenshotOwnerMessages: screenshotOwnerMessages ?? [],
-          screenshotMessages: screenshotMessages ?? [],
-          translatedPhrase: text,
-          dictionary,
-        })
-        analysis = {
-          screenshotNotes: notes.screenshotNotes,
-          relationshipToDictionary: notes.relationshipToDictionary,
-          contextConflict: notes.contextConflict,
-        }
-      } catch (error) {
-        console.error("Screenshot notes failed:", error)
+      const notes = await resolveScreenshotNotes({
+        direction,
+        sarcasmLevel,
+        conversationSummary,
+        screenshotOwnerMessages: screenshotOwnerMessages ?? [],
+        screenshotMessages: screenshotMessages ?? [],
+        translatedPhrase: text,
+        dictionary,
+      })
+      analysis = {
+        screenshotNotes: notes.screenshotNotes,
+        relationshipToDictionary: notes.relationshipToDictionary,
+        contextConflict: notes.contextConflict,
       }
     }
 
@@ -683,29 +711,24 @@ export const runTranslatePipeline = async (
   }
 
   if (image && conversationSummary && gatewayReady) {
-    try {
-      const notes = await buildScreenshotNotesWithAi({
-        direction,
-        sarcasmLevel,
-        conversationSummary,
-        screenshotOwnerMessages: screenshotOwnerMessages ?? [],
-        screenshotMessages: screenshotMessages ?? [],
-        translatedPhrase: extractedPhrase,
-        dictionary,
-      })
-      analysis = {
-        ...analysis,
-        screenshotNotes: notes.screenshotNotes,
-        relationshipToDictionary:
-          notes.contextConflict
-            ? "conflicts"
-            : (analysis.relationshipToDictionary ??
-              notes.relationshipToDictionary),
-        contextConflict:
-          Boolean(analysis.contextConflict) || notes.contextConflict,
-      }
-    } catch (error) {
-      console.error("Screenshot notes failed:", error)
+    const notes = await resolveScreenshotNotes({
+      direction,
+      sarcasmLevel,
+      conversationSummary,
+      screenshotOwnerMessages: screenshotOwnerMessages ?? [],
+      screenshotMessages: screenshotMessages ?? [],
+      translatedPhrase: extractedPhrase,
+      dictionary,
+    })
+    analysis = {
+      ...analysis,
+      screenshotNotes: notes.screenshotNotes,
+      relationshipToDictionary: notes.contextConflict
+        ? "conflicts"
+        : (analysis.relationshipToDictionary ??
+          notes.relationshipToDictionary),
+      contextConflict:
+        Boolean(analysis.contextConflict) || notes.contextConflict,
     }
   }
 

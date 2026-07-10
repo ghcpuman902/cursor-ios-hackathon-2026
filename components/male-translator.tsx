@@ -104,7 +104,7 @@ const MALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
   },
   {
     className: "absolute top-[22%] -right-36 size-[32rem]",
-    colorClass: "gender-blob-male-cyan",
+    colorClass: "gender-blob-male-pink",
     drift: { x: [0, -34, 8, 16, 0], y: [0, 24, -14, 8, 0] },
     cycleDuration: 24,
   },
@@ -156,7 +156,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[linear-gradient(160deg,#14234b_0%,#0c1228_46%,#170d29_100%)]"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[linear-gradient(160deg,#14234b_0%,#1c1648_32%,#3a1848_58%,#2a1038_78%,#0c1228_100%)]"
       aria-hidden
     >
       <AnimatePresence mode="sync">
@@ -214,10 +214,12 @@ const buildLocalResult = (
     direction,
     isFallback: baseline.isFallback,
   })
+  // Keep in sync with attachFootnoteOrFallback in translate-pipeline —
+  // mismatched types make the footnote jump bubbles and look like it vanished.
   const localEnhancement = {
     type: baseline.isFallback
       ? ("alternate_reading" as const)
-      : ("overthinking_check" as const),
+      : ("timing_check" as const),
     text: localFootnote,
     relationshipToDictionary: baseline.isFallback
       ? ("adds_context" as const)
@@ -492,14 +494,28 @@ export function MaleTranslator({
             return turn
           }
 
+          const nextInsight =
+            enhanced.aiInsight?.trim() || turn.result.aiInsight
+          const nextEnhancement =
+            enhanced.aiEnhancement ?? turn.result.aiEnhancement
+          const nextAnalysis = enhanced.analysis?.whyThisPhrase
+            ? enhanced.analysis
+            : (enhanced.analysis?.screenshotNotes?.length ?? 0) > 0
+              ? enhanced.analysis
+              : (turn.result.analysis ?? enhanced.analysis)
+
           return {
             ...turn,
             result: {
               ...turn.result,
-              aiInsight: enhanced.aiInsight ?? turn.result.aiInsight,
-              aiEnhancement:
-                enhanced.aiEnhancement ?? turn.result.aiEnhancement,
-              analysis: enhanced.analysis ?? turn.result.analysis,
+              aiInsight: nextInsight,
+              aiEnhancement: nextEnhancement
+                ? {
+                    ...nextEnhancement,
+                    text: nextEnhancement.text?.trim() || nextInsight || "",
+                  }
+                : turn.result.aiEnhancement,
+              analysis: nextAnalysis,
               extractedPhrase:
                 enhanced.extractedPhrase ?? turn.result.extractedPhrase,
               mode: enhanced.mode ?? turn.result.mode,
@@ -875,7 +891,7 @@ export function MaleTranslator({
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="translator-title text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {genderConfig.appName}
             </h1>
           </div>

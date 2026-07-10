@@ -1,11 +1,16 @@
 "use client"
 
-import { Copy, Play, RefreshCw, Sparkles } from "lucide-react"
+import { Copy, Play, RefreshCw } from "lucide-react"
 
 import { GlassPanel } from "@/components/glass-panel"
-import { Badge } from "@/components/ui/badge"
+import { TacticalReadBubble } from "@/components/tactical-read-bubble"
+import { TimeSensitiveBubble } from "@/components/time-sensitive-bubble"
 import { Button } from "@/components/ui/button"
-import { RISK_LABELS } from "@/lib/translations"
+import {
+  isTimeSensitiveEnhancement,
+  toBroAdviceFields,
+} from "@/lib/bro-format"
+import { toHerAdviceFields } from "@/lib/her-format"
 import type { TranslationResult } from "@/lib/translator"
 
 type TranslationResultCardProps = {
@@ -18,6 +23,167 @@ type TranslationResultCardProps = {
   onCopy: () => void
 }
 
+const BroAdviceCard = ({
+  result,
+  resultLabel,
+  isSpeaking,
+  onSpeak,
+  onCopy,
+}: {
+  result: TranslationResult
+  resultLabel: string
+  isSpeaking: boolean
+  onSpeak: () => void
+  onCopy: () => void
+}) => {
+  const bro = toBroAdviceFields({
+    riskLevel: result.riskLevel,
+    possibleActualMeaning: result.possibleActualMeaning,
+    lowestRiskReply: result.lowestRiskReply,
+    tinyWholesomeNudge: result.tinyWholesomeNudge,
+  })
+
+  return (
+    <GlassPanel
+      variant="strong"
+      className="rounded-3xl rounded-bl-md px-4 py-4 text-sm"
+    >
+      <p className="mb-3 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+        {resultLabel}
+      </p>
+
+      <p className="text-sm font-medium text-foreground">{bro.alert}</p>
+
+      <div className="mt-3 space-y-2.5 text-sm leading-relaxed">
+        <p>
+          <span className="font-medium text-foreground/90">real talk: </span>
+          <span className="text-foreground/80">{bro.realTalk}</span>
+        </p>
+        <p>
+          <span className="font-medium text-foreground/90">send this: </span>
+          <span className="text-foreground/80">&ldquo;{bro.sendThis}&rdquo;</span>
+        </p>
+        <p>
+          <span className="font-medium text-foreground/90">chill move: </span>
+          <span className="text-foreground/70">{bro.chillMove}</span>
+        </p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          className="h-8 rounded-full"
+          onClick={onSpeak}
+          disabled={isSpeaking}
+        >
+          {isSpeaking ? (
+            <RefreshCw className="animate-spin" aria-hidden />
+          ) : (
+            <Play aria-hidden />
+          )}
+          play
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 rounded-full"
+          onClick={onCopy}
+        >
+          <Copy aria-hidden />
+          copy
+        </Button>
+      </div>
+    </GlassPanel>
+  )
+}
+
+const HerAdviceCard = ({
+  result,
+  resultLabel,
+  isSpeaking,
+  onSpeak,
+  onCopy,
+}: {
+  result: TranslationResult
+  resultLabel: string
+  isSpeaking: boolean
+  onSpeak: () => void
+  onCopy: () => void
+}) => {
+  const her = toHerAdviceFields({
+    riskLevel: result.riskLevel,
+    possibleActualMeaning: result.possibleActualMeaning,
+    lowestRiskReply: result.lowestRiskReply,
+    tinyWholesomeNudge: result.tinyWholesomeNudge,
+  })
+
+  return (
+    <GlassPanel
+      variant="strong"
+      className="rounded-3xl rounded-bl-md px-4 py-4 text-sm"
+    >
+      <p className="mb-3 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+        {resultLabel}
+      </p>
+
+      <p className="text-sm font-medium text-foreground">{her.alert}</p>
+
+      <div className="mt-3 space-y-2.5 text-sm leading-relaxed">
+        <p>
+          <span className="font-medium text-foreground/90">the read: </span>
+          <span className="text-foreground/80">{her.theRead}</span>
+        </p>
+        <p>
+          <span className="font-medium text-foreground/90">try this: </span>
+          <span className="text-foreground/80">&ldquo;{her.tryThis}&rdquo;</span>
+        </p>
+        <p>
+          <span className="font-medium text-foreground/90">soft landing: </span>
+          <span className="text-foreground/70">{her.softLanding}</span>
+        </p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          className="h-8 rounded-full"
+          onClick={onSpeak}
+          disabled={isSpeaking}
+        >
+          {isSpeaking ? (
+            <RefreshCw className="animate-spin" aria-hidden />
+          ) : (
+            <Play aria-hidden />
+          )}
+          Play
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 rounded-full"
+          onClick={onCopy}
+        >
+          <Copy aria-hidden />
+          Copy
+        </Button>
+      </div>
+    </GlassPanel>
+  )
+}
+
+const hasAnalysisBody = (
+  analysis: TranslationResult["analysis"] | undefined
+): boolean => {
+  if (!analysis) return false
+  return Boolean(
+    analysis.whyThisPhrase ||
+      (analysis.contextSignals && analysis.contextSignals.length > 0) ||
+      (analysis.extraStoryAdded && analysis.extraStoryAdded.length > 0) ||
+      (analysis.whatUserBrainAdded && analysis.whatUserBrainAdded.length > 0) ||
+      (analysis.screenshotNotes && analysis.screenshotNotes.length > 0)
+  )
+}
+
 export const TranslationResultCard = ({
   result,
   resultLabel,
@@ -27,181 +193,74 @@ export const TranslationResultCard = ({
   onSpeak,
   onCopy,
 }: TranslationResultCardProps) => {
-  const displayPhrase = result.extractedPhrase ?? result.input
-  const showLongContext = result.mode === "long_context_translation"
-  const analysis = result.analysis
   const isFemaleTranslator = theme === "female-translator"
-  const labels = isFemaleTranslator
-    ? {
-        theory: "Mission intel",
-        reply: "Safe play",
-        analysis: "Tactical read",
-        loading: "Reading the quest log…",
-        refining: "Updating the battle plan…",
-      }
-    : {
-        theory: "Today's theory",
-        reply: "Lowest-risk reply",
-        analysis: "Analysis",
-        loading: "Reading the soft context…",
-        refining: "Refining…",
-      }
+  const analysis = result.analysis
+  const enhancementType = result.aiEnhancement?.type
+  const footnoteText = result.aiInsight?.trim() || result.aiEnhancement?.text?.trim()
+  // Default unknown/missing types into the timing bubble so footnotes never vanish
+  // when the API flips type after the local optimistic result.
+  const isTimeSensitive =
+    !enhancementType || isTimeSensitiveEnhancement(enhancementType)
+
+  const softNoteInsight =
+    footnoteText && !isTimeSensitive ? footnoteText : undefined
+
+  const showTimeSensitive = Boolean(footnoteText && isTimeSensitive)
+
+  const hasSoftNote =
+    hasAnalysisBody(analysis) ||
+    Boolean(softNoteInsight) ||
+    Boolean(
+      analysis?.contextConflict || result.aiEnhancement?.contextConflict
+    ) ||
+    (isFetchingAnalysis && hasAnalysisBody(analysis))
 
   return (
-    <div className="w-full max-w-[88%]">
-      <GlassPanel
-        variant="strong"
-        className="rounded-3xl rounded-br-md px-4 py-4 text-sm"
-      >
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-            {resultLabel}
-          </p>
-          <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
-            {RISK_LABELS[result.riskLevel]}
-          </Badge>
-          {showLongContext && result.input !== displayPhrase && (
-            <Badge
-              variant="outline"
-              className="translator-control h-5 rounded-full border px-2 text-[10px] text-muted-foreground"
-            >
-              From a longer rant
-            </Badge>
-          )}
-        </div>
+    <div className="w-full max-w-[88%] space-y-2">
+      {isFemaleTranslator ? (
+        <BroAdviceCard
+          result={result}
+          resultLabel={resultLabel}
+          isSpeaking={isSpeaking}
+          onSpeak={onSpeak}
+          onCopy={onCopy}
+        />
+      ) : (
+        <HerAdviceCard
+          result={result}
+          resultLabel={resultLabel}
+          isSpeaking={isSpeaking}
+          onSpeak={onSpeak}
+          onCopy={onCopy}
+        />
+      )}
 
-        <p className="text-sm font-semibold text-foreground">
-          {result.headline}
-        </p>
-        <p className="mt-2 text-base leading-relaxed font-medium text-foreground">
-          &ldquo;{result.comicTranslation}&rdquo;
-        </p>
+      {showTimeSensitive && (
+        <TimeSensitiveBubble
+          text={footnoteText ?? ""}
+          isLoading={isFetchingAnalysis}
+          theme={theme}
+        />
+      )}
 
-        <div className="mt-3 space-y-2 border-t border-border/70 pt-3 text-sm leading-relaxed text-foreground/80">
-          <p>
-            <span className="font-medium text-foreground/90">
-              {labels.theory}:{" "}
-            </span>
-            {result.possibleActualMeaning}
-          </p>
-          <p>
-            <span className="font-medium text-foreground/90">
-              {labels.reply}:{" "}
-            </span>
-            {result.lowestRiskReply}
-          </p>
-          <p className="text-foreground/70">{result.tinyWholesomeNudge}</p>
-        </div>
-
-        {(analysis || isFetchingAnalysis || result.aiInsight) && (
-          <div className="mt-3 space-y-2 border-t border-border/70 pt-3">
-            <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-              <Sparkles className="size-3" aria-hidden />
-              {labels.analysis}
-            </p>
-
-            {isFetchingAnalysis && !analysis && !result.aiInsight && (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="size-3.5 animate-spin" aria-hidden />
-                {labels.loading}
-              </p>
-            )}
-
-            {(analysis?.contextConflict ||
-              result.aiEnhancement?.contextConflict) && (
-              <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm leading-relaxed text-foreground/85">
-                Context caveat: the thread or rant may soften or challenge
-                today&apos;s dictionary reading — card above stays primary.
-              </p>
-            )}
-
-            {analysis?.whyThisPhrase && (
-              <p className="text-sm leading-relaxed text-foreground/80">
-                {analysis.whyThisPhrase}
-              </p>
-            )}
-
-            {analysis?.contextSignals && analysis.contextSignals.length > 0 && (
-              <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
-                {analysis.contextSignals.map((signal) => (
-                  <li key={signal}>{signal}</li>
-                ))}
-              </ul>
-            )}
-
-            {(analysis?.extraStoryAdded ?? analysis?.whatUserBrainAdded) &&
-              (analysis?.extraStoryAdded ?? analysis?.whatUserBrainAdded)!
-                .length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-medium text-foreground/70">
-                    What your brain may have added
-                  </p>
-                  <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
-                    {(
-                      analysis?.extraStoryAdded ??
-                      analysis?.whatUserBrainAdded ??
-                      []
-                    ).map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-            {analysis?.screenshotNotes &&
-              analysis.screenshotNotes.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-medium text-foreground/70">
-                    Screenshot notes
-                  </p>
-                  <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
-                    {analysis.screenshotNotes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-            {result.aiInsight && (
-              <p className="text-sm leading-relaxed text-foreground/80">
-                {result.aiInsight}
-              </p>
-            )}
-
-            {isFetchingAnalysis && (analysis || result.aiInsight) && (
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <RefreshCw className="size-3 animate-spin" aria-hidden />
-                {labels.refining}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            className="h-8 rounded-full"
-            onClick={onSpeak}
-            disabled={isSpeaking}
-          >
-            {isSpeaking ? (
-              <RefreshCw className="animate-spin" aria-hidden />
-            ) : (
-              <Play aria-hidden />
-            )}
-            Play
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-8 rounded-full"
-            onClick={onCopy}
-          >
-            <Copy aria-hidden />
-            Copy
-          </Button>
-        </div>
-      </GlassPanel>
+      {hasSoftNote && (
+        <TacticalReadBubble
+          analysis={analysis}
+          aiInsight={softNoteInsight}
+          contextConflict={
+            Boolean(analysis?.contextConflict) ||
+            Boolean(result.aiEnhancement?.contextConflict)
+          }
+          isFetchingAnalysis={isFetchingAnalysis && hasAnalysisBody(analysis)}
+          loadingLabel={
+            isFemaleTranslator
+              ? "reading the room…"
+              : "Reading the soft context…"
+          }
+          refiningLabel={isFemaleTranslator ? "updating…" : "Refining…"}
+          title={isFemaleTranslator ? "extra context" : "Soft note"}
+        />
+      )}
     </div>
   )
 }

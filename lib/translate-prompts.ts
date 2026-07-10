@@ -1,6 +1,10 @@
+import type {
+  ContextRelationship,
+  DictionaryTranslationContext,
+} from "@/lib/dictionary-context"
+import { DICTIONARY_CONSISTENCY_RULES } from "@/lib/dictionary-context"
 import type { TranslationDirection } from "@/lib/translation-types"
 import type { TranslatorGender } from "@/lib/translator"
-import { DICTIONARY_CONSISTENCY_RULES } from "@/lib/dictionary-context"
 
 export type PromptInputKind = "short" | "long" | "screenshot_context"
 
@@ -8,17 +12,20 @@ export type MemeIntensity = "playful" | "spicy" | "nuclear"
 
 export const DIRECTION_STYLE_GUIDES: Record<TranslationDirection, string> = {
   male_to_female: [
-    "Direction male_to_female means explaining male, bro, literal, or direct messages to a female-coded receiver.",
-    "Use astrology, tarot, cosy horoscope, personality-test language, warm metaphor, and emotional weather.",
-    "Rhetorical structure: (1) omen or reading, (2) plausible interpretation, (3) gentle permission to stop overreading.",
+    "Direction male_to_female means explaining his message so she feels understood — 'it gets me' — not more confused.",
+    "Keep a soft astrology / cosy horoscope flavour, but use it lightly: one warm image max, never a tarot essay.",
+    "Rhetorical structure: (1) what he probably means, (2) one gentle reply, (3) permission to stop overreading.",
+    "Prefer clarity over cleverness. Do not stack headline + comic quote + theory + analysis saying the same thing.",
     "Never use gaming, tech-bro, CPU, OS, DLC, engineering metaphors, or therapy tone.",
+    "Footnotes: one short soft sentence. Prefer timing/tiredness when relevant. Sound like: 'Tomorrow's grumpiness may just be little sleep — let breakfast land first.'",
   ].join(" "),
   female_to_male: [
-    "Direction female_to_male means explaining female, indirect, emotional, or implication-heavy messages to a male-coded receiver.",
-    "Use gaming, quests, lore, dialogue options, meme language, and direct next-action framing.",
-    "Rhetorical structure: (1) status, (2) hidden objective, (3) next move.",
-    "Prefer broadly recognisable internet and gaming language.",
-    "Never use astrology, tarot, therapy essays, rapidly ageing TikTok slang, niche fandom references, or more than one meme metaphor per response.",
+    "Direction female_to_male means explaining her message to a bro who wants a quick honest read before getting back to his game.",
+    "Write like mates in a group chat: all lowercase, short, chill, honest — not essays.",
+    "Rhetorical structure: (1) alert level, (2) what she probably means, (3) what to say, (4) how to deescalate.",
+    "Prefer plain mate talk over gaming quest jargon, mission intel, dialogue options, emotional damage memes, or raid-boss metaphors.",
+    "Never use astrology, tarot, therapy essays, rapidly ageing TikTok slang, or niche fandom references.",
+    "Max one short sentence. Sound like: 'yeah bro hunger or bad timing might be making this worse'.",
   ].join(" "),
 }
 
@@ -59,19 +66,54 @@ export const aiFailureFallback = (direction: TranslationDirection): string =>
  * Deterministic supporting footnote when AI Gateway is unavailable.
  * Keeps the dictionary-first + analysis-follow layout intact offline.
  */
+export const buildLocalScreenshotNotes = (params: {
+  direction: TranslationDirection
+  dictionary: DictionaryTranslationContext
+}): {
+  screenshotNotes: string[]
+  relationshipToDictionary: ContextRelationship
+  contextConflict: boolean
+} => {
+  const relationshipToDictionary: ContextRelationship = params.dictionary.isFallback
+    ? "adds_context"
+    : "supports"
+
+  if (params.direction === "female_to_male") {
+    return {
+      screenshotNotes: [
+        params.dictionary.isFallback
+          ? "the thread might add context the dictionary couldn't pin down"
+          : "the screenshot thread probably lines up with the dictionary read",
+      ],
+      relationshipToDictionary,
+      contextConflict: false,
+    }
+  }
+
+  return {
+    screenshotNotes: [
+      params.dictionary.isFallback
+        ? "The visible thread may add nuance the dictionary could not lock in."
+        : "The screenshot thread likely supports today's dictionary reading.",
+    ],
+    relationshipToDictionary,
+    contextConflict: false,
+  }
+}
+
 export const buildLocalSupportingFootnote = (params: {
   direction: TranslationDirection
   isFallback: boolean
 }): string => {
   if (params.direction === "female_to_male") {
     return params.isFallback
-      ? "Status check: objective may be on the tin — do not invent a raid boss from one line."
-      : "Side note: hunger, lag, or reply timing could still be guest-starring in this quest."
+      ? "might be simpler than you think — don't invent drama from one line"
+      : "btw hunger, tiredness, or bad timing might be making this worse than it is"
   }
 
   return params.isFallback
-    ? "The cards lean literal: this may be a plain request, not a secret subplot."
-    : "Soft check: timing or tiredness could still colour this omen — no need to rewrite the season."
+    ? "This may be a plain request, not a secret subplot."
+    : "Timing or tiredness could still colour this — no need to rewrite the season."
 }
 
 const SHARED_RULES = [
@@ -90,8 +132,8 @@ const SHARED_RULES = [
 ].join(" ")
 
 const FEW_SHOT_EXAMPLES = [
-  "Good male_to_female footnote: The cards show one exhausted man and no hidden subplot; this may be a rare case where 'fine' only has one season.",
-  "Good female_to_male footnote: Main quest still active: she wants the feeling noticed before the problem gets patched.",
+  "Good male_to_female footnote: Tomorrow's mood may just be little sleep — let breakfast arrive before the conspiracy board.",
+  "Good female_to_male footnote: yeah she probs just wants you to notice how she feels before you try to fix it.",
   "Bad generic therapy-style output (never do this): He may be stressed, so consider communicating openly. Reason: generic, therapeutic, no concrete comic frame, and likely duplicates the dictionary.",
   "Long-input extraction example: From a rant that quotes 'I'm fine', extract phrase='I'm fine', sourceType=direct_quote, confidence=high.",
   "Screenshot-context example: Choose type=screenshot_context and add one hedged note about reply timing visible in the thread, without inventing unread messages.",
@@ -107,7 +149,9 @@ export const buildFootnotePrompt = (params: {
     "You write one short supplemental footnote for a comedy-first communication translator.",
     "Choose exactly one type: alternate_reading, timing_check, hunger_or_tiredness, overthinking_check, tone_mismatch, reply_timing, or screenshot_context.",
     "Return JSON only matching the schema.",
-    "text must be exactly one sentence, under 30 words, with no label, preamble, markdown, hashtags, or quotation marks.",
+    "text must be exactly one sentence, under 25 words, with no label, preamble, markdown, hashtags, or quotation marks.",
+    "For female_to_male: all lowercase mate-chat voice. Prefer timing_check, hunger_or_tiredness, or reply_timing when relevant.",
+    "For male_to_female: soft warm voice, sentence case. Prefer timing_check, hunger_or_tiredness, or reply_timing when sleep, lateness, or reply timing could explain the tension. Do not invent extra tarot metaphors.",
     "Add a new angle not already present in the dictionary result.",
     "Do not repeat comicTranslation, possibleActualMeaning, lowestRiskReply, or tinyWholesomeNudge.",
     "If contextConflict is true, explain the conflict in a compact, hedged way without overwriting the dictionary result.",
@@ -166,7 +210,10 @@ export const buildScreenshotNotesPrompt = (params: {
 }): string =>
   [
     "From screenshot message context, produce short comic notes that help interpret the already-translated phrase.",
-    "Return JSON only matching the schema.",
+    "Return JSON only matching the schema with keys screenshotNotes, relationshipToDictionary, and contextConflict.",
+    "screenshotNotes must be an array of 1 to 4 strings; each string is one hedged sentence under 25 words.",
+    "relationshipToDictionary must be supports, adds_context, softens, or conflicts.",
+    "Set contextConflict true only when screenshot context materially challenges the dictionary.",
     "Do not invent unread messages. Hedge everything.",
     "Do not rewrite the dictionary translation. Notes must support, add context, soften, or explicitly flag conflict.",
     params.direction === "male_to_female"

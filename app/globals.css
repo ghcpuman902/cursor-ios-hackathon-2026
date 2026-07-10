@@ -53,9 +53,9 @@
   --translator-surface: rgb(255 255 255 / 0.08);
   --translator-surface-strong: rgb(255 255 255 / 0.12);
   --translator-surface-subtle: rgb(255 255 255 / 0.06);
-  --translator-border: rgb(255 255 255 / 0.12);
-  --translator-border-strong: rgb(255 255 255 / 0.16);
-  --translator-highlight: rgb(255 255 255 / 0.12);
+  --translator-border: rgb(255 255 255 / 0.1);
+  --translator-border-strong: rgb(255 255 255 / 0.14);
+  --translator-highlight: rgb(255 255 255 / 0.28);
   --translator-shadow: rgb(0 0 0 / 0.24);
   --translator-control: rgb(255 255 255 / 0.08);
   --translator-control-hover: rgb(255 255 255 / 0.14);
@@ -133,9 +133,9 @@
   --translator-surface: rgb(255 255 255 / 0.08);
   --translator-surface-strong: rgb(255 255 255 / 0.12);
   --translator-surface-subtle: rgb(255 255 255 / 0.06);
-  --translator-border: rgb(255 255 255 / 0.12);
-  --translator-border-strong: rgb(255 255 255 / 0.16);
-  --translator-highlight: rgb(255 255 255 / 0.12);
+  --translator-border: rgb(255 255 255 / 0.1);
+  --translator-border-strong: rgb(255 255 255 / 0.14);
+  --translator-highlight: rgb(255 255 255 / 0.28);
   --translator-shadow: rgb(0 0 0 / 0.24);
   --translator-control: rgb(255 255 255 / 0.08);
   --translator-control-hover: rgb(255 255 255 / 0.14);
@@ -162,42 +162,42 @@
   --translator-surface: rgb(218 232 255 / 0.08);
   --translator-surface-strong: rgb(218 232 255 / 0.14);
   --translator-surface-subtle: rgb(218 232 255 / 0.06);
-  --translator-border: rgb(192 216 255 / 0.18);
-  --translator-border-strong: rgb(214 228 255 / 0.27);
-  --translator-highlight: rgb(255 255 255 / 0.14);
+  --translator-border: rgb(192 216 255 / 0.14);
+  --translator-border-strong: rgb(214 228 255 / 0.2);
+  --translator-highlight: rgb(255 255 255 / 0.32);
   --translator-shadow: rgb(1 7 29 / 0.42);
   --translator-control: rgb(215 231 255 / 0.1);
   --translator-control-hover: rgb(215 231 255 / 0.18);
 }
 
 .translator-theme[data-translator-theme="female-translator"] {
-  --app-shell: #17110b;
-  --app-shell-highlight: #2d1d0b;
-  --background: oklch(0.16 0.03 70);
-  --foreground: oklch(0.94 0.055 90);
-  --card: oklch(0.2 0.035 70);
-  --card-foreground: oklch(0.94 0.055 90);
-  --primary: oklch(0.8 0.125 82);
-  --primary-foreground: oklch(0.2 0.035 68);
-  --secondary: oklch(0.28 0.05 65);
-  --secondary-foreground: oklch(0.95 0.05 85);
-  --muted: oklch(0.24 0.035 65);
-  --muted-foreground: oklch(0.75 0.045 80);
-  --accent: oklch(0.36 0.075 63);
-  --accent-foreground: oklch(0.98 0.04 90);
-  --border: rgb(218 176 90 / 0.28);
-  --input: rgb(218 176 90 / 0.3);
-  --ring: oklch(0.77 0.13 82);
+  --app-shell: #0a0908;
+  --app-shell-highlight: #12100e;
+  --background: oklch(0.14 0.01 280);
+  --foreground: oklch(0.96 0.01 280);
+  --card: oklch(0.18 0.012 280);
+  --card-foreground: oklch(0.96 0.01 280);
+  --primary: oklch(0.78 0.16 350);
+  --primary-foreground: oklch(0.14 0.02 280);
+  --secondary: oklch(0.22 0.015 280);
+  --secondary-foreground: oklch(0.94 0.01 280);
+  --muted: oklch(0.2 0.012 280);
+  --muted-foreground: oklch(0.72 0.02 280);
+  --accent: oklch(0.26 0.02 280);
+  --accent-foreground: oklch(0.96 0.01 280);
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: oklch(0.72 0.14 350);
   --radius: 0.35rem;
-  --translator-surface: rgb(61 43 21 / 0.84);
-  --translator-surface-strong: rgb(76 52 23 / 0.92);
-  --translator-surface-subtle: rgb(50 35 18 / 0.76);
-  --translator-border: rgb(218 176 90 / 0.3);
-  --translator-border-strong: rgb(242 204 119 / 0.48);
-  --translator-highlight: rgb(255 235 177 / 0.12);
-  --translator-shadow: rgb(0 0 0 / 0.52);
-  --translator-control: rgb(215 165 75 / 0.15);
-  --translator-control-hover: rgb(236 193 103 / 0.25);
+  --translator-surface: rgb(0 0 0 / 0.42);
+  --translator-surface-strong: rgb(0 0 0 / 0.52);
+  --translator-surface-subtle: rgb(0 0 0 / 0.32);
+  --translator-border: rgb(255 255 255 / 0.1);
+  --translator-border-strong: rgb(255 255 255 / 0.14);
+  --translator-highlight: rgb(255 255 255 / 0.3);
+  --translator-shadow: rgb(0 0 0 / 0.55);
+  --translator-control: rgb(0 0 0 / 0.38);
+  --translator-control-hover: rgb(0 0 0 / 0.5);
 }
 
 @layer base {
@@ -385,6 +385,10 @@
     background-color: oklch(0.52 0.3 248 / 0.5);
   }
 
+  .gender-blob-male-pink {
+    background-color: oklch(0.68 0.3 350 / 0.5);
+  }
+
   .gender-blob-male-red {
     background-color: oklch(0.6 0.33 24 / 0.46);
   }
@@ -400,6 +404,10 @@
 
     .gender-blob-male-indigo {
       background-color: oklch(0.54 0.38 248 / 0.56);
+    }
+
+    .gender-blob-male-pink {
+      background-color: oklch(0.7 0.36 350 / 0.56);
     }
 
     .gender-blob-male-red {
@@ -565,19 +573,8 @@
     color: white !important;
   }
 
-  .translator-theme[data-translator-theme="female-translator"]
-    .sliding-pill--glass
-    :is([data-slot="pill-trigger"], [data-slot="tabs-trigger"]) {
-    color: color-mix(in oklch, var(--foreground) 68%, transparent) !important;
-  }
-
-  .translator-theme[data-translator-theme="female-translator"]
-    .sliding-pill--glass
-    :is(
-      [data-slot="pill-trigger"][data-active],
-      [data-slot="tabs-trigger"][data-state="active"]
-    ) {
-    color: var(--foreground) !important;
+  .translator-theme[data-translator-theme="female-translator"] .translator-title {
+    text-shadow: 0 0.5px 0 rgb(0 0 0 / 0.1);
   }
 
   .meme-tile {

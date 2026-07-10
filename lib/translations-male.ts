@@ -58,34 +58,34 @@ export const MALE_TRANSLATIONS: MaleTranslation[] = [
   // World Cup 2026 / late kick-offs / mates night — longer patterns first
   {
     pattern: "the match kicks off at 1am",
-    headline: "🌙 Midnight Kick-Off Eclipse",
+    headline: "🌙 Midnight Kick-Off",
     comicTranslation:
-      "The moon card is doing overtime. He may be asking for one sacred late-night ritual, not a breakup.",
+      "He wants a late-night match ritual — not a breakup.",
     spicyComicTranslation:
-      "FIFA scheduled feelings for after midnight. He wants permission, not a tribunal.",
+      "FIFA booked 1am. He wants permission, not a tribunal.",
     possibleActualMeaning:
-      "A 1am BST kick-off is brutal but real for UK fans — he may want company, silence, or grace tomorrow.",
+      "A 1am kick-off is brutal but real — he may want company, silence, or grace tomorrow.",
     riskLevel: "medium",
     lowestRiskReply:
       "I know it's late — want me nearby, or want the room dark and peaceful?",
     tinyWholesomeNudge:
-      "Negotiate sleep vs match once. Then pick a side without a midnight trial.",
+      "Negotiate sleep vs match once. Then pick a side.",
     category: "plans",
   },
   {
     pattern: "kick off is at 1am",
-    headline: "🌙 Midnight Kick-Off Eclipse",
+    headline: "🌙 Midnight Kick-Off",
     comicTranslation:
-      "The moon card is doing overtime. He may be asking for one sacred late-night ritual, not a breakup.",
+      "He wants a late-night match ritual — not a breakup.",
     spicyComicTranslation:
-      "FIFA scheduled feelings for after midnight. He wants permission, not a tribunal.",
+      "FIFA booked 1am. He wants permission, not a tribunal.",
     possibleActualMeaning:
-      "A 1am BST kick-off is brutal but real for UK fans — he may want company, silence, or grace tomorrow.",
+      "A 1am kick-off is brutal but real — he may want company, silence, or grace tomorrow.",
     riskLevel: "medium",
     lowestRiskReply:
       "I know it's late — want me nearby, or want the room dark and peaceful?",
     tinyWholesomeNudge:
-      "Negotiate sleep vs match once. Then pick a side without a midnight trial.",
+      "Negotiate sleep vs match once. Then pick a side.",
     category: "plans",
   },
   {
