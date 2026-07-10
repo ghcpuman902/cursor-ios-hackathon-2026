@@ -7,20 +7,21 @@ import { formatBroTimeSensitive } from "@/lib/bro-format"
 import { formatHerTimeSensitive } from "@/lib/her-format"
 
 type TimeSensitiveBubbleProps = {
+  /** Deterministic timing warning only — never AI text */
   text: string
-  isLoading?: boolean
   theme?: "male-translator" | "female-translator"
 }
 
 export const TimeSensitiveBubble = ({
   text,
-  isLoading = false,
   theme = "female-translator",
 }: TimeSensitiveBubbleProps) => {
   const isBro = theme === "female-translator"
   const displayText = isBro
     ? formatBroTimeSensitive(text)
     : formatHerTimeSensitive(text)
+
+  if (!displayText) return null
 
   return (
     <GlassPanel
@@ -31,24 +32,7 @@ export const TimeSensitiveBubble = ({
         <Clock className="size-3" aria-hidden />
         {isBro ? "time check" : "Timing"}
       </p>
-      {isLoading ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          {displayText ? (
-            <>
-              <span className="text-foreground/80">{displayText}</span>
-              <span className="text-xs">updating…</span>
-            </>
-          ) : isBro ? (
-            "checking timing…"
-          ) : (
-            "Checking the soft timing…"
-          )}
-        </p>
-      ) : (
-        <p className="text-sm leading-relaxed text-foreground/80">
-          {displayText}
-        </p>
-      )}
+      <p className="text-sm leading-relaxed text-foreground/80">{displayText}</p>
     </GlassPanel>
   )
 }

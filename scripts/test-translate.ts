@@ -309,19 +309,23 @@ const assertDictionaryBeforeAiOrder = async () => {
     "Expected dictionary source without Gateway"
   )
   assert(
-    Boolean(shortResult.aiInsight?.trim()),
-    "Without Gateway, a local supporting footnote must still follow the dictionary card"
+    Boolean(shortResult.timingWarning?.trim()),
+    "Without Gateway, a deterministic timing warning must still follow the dictionary card"
+  )
+  assert(
+    !shortResult.aiInsight?.trim(),
+    "Without Gateway, AI note must stay empty — do not put local timing into aiInsight"
   )
   assert(
     Boolean(
-      shortResult.aiInsight?.includes("literal") ||
-        shortResult.aiInsight?.includes("timing") ||
-        shortResult.aiInsight?.includes("Side note") ||
-        shortResult.aiInsight?.includes("Soft check") ||
-        shortResult.aiInsight?.includes("Status check") ||
-        shortResult.aiInsight?.includes("cards")
+      shortResult.timingWarning?.includes("literal") ||
+        shortResult.timingWarning?.includes("timing") ||
+        shortResult.timingWarning?.includes("hunger") ||
+        shortResult.timingWarning?.includes("tiredness") ||
+        shortResult.timingWarning?.includes("subplot") ||
+        shortResult.timingWarning?.includes("season")
     ),
-    "Local footnote should be on-brand supporting analysis"
+    "Timing warning should be on-brand deterministic copy"
   )
 
   const longResult = await runTranslatePipeline({
@@ -419,8 +423,16 @@ const assertLiveGateway = async () => {
     assertPrimaryFieldsUnchanged(baseline, generatedResult, promptCase.text)
 
     assert(
+      Boolean(generatedResult.timingWarning?.trim()),
+      `Missing deterministic timing warning for "${promptCase.text}"`
+    )
+    assert(
       Boolean(generatedResult.aiInsight?.trim()),
       `Gateway did not attach a supplemental AI note for "${promptCase.text}"`
+    )
+    assert(
+      generatedResult.timingWarning !== generatedResult.aiInsight,
+      "timingWarning and aiInsight must stay separate"
     )
 
     if (generatedResult.aiEnhancement) {
@@ -432,7 +444,8 @@ const assertLiveGateway = async () => {
 
     console.log(`✓ ${promptCase.gender} "${promptCase.text}"`)
     console.log(`  dictionary: ${generatedResult.translation}`)
-    console.log(`  ai analysis: ${generatedResult.aiInsight}`)
+    console.log(`  timing: ${generatedResult.timingWarning}`)
+    console.log(`  ai note: ${generatedResult.aiInsight}`)
   }
 
   console.log(

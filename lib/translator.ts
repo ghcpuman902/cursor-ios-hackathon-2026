@@ -69,6 +69,8 @@ export type TranslationResult = {
   matchedPattern?: string
   isFallback: boolean
   source: "dictionary" | "ai"
+  /** Deterministic timing / hunger / lag warning — never AI-written */
+  timingWarning?: string
   /** Optional AI-written supplemental footnote text (mirrors aiEnhancement.text) */
   aiInsight?: string
   /** Structured short-input / footnote enhancement */

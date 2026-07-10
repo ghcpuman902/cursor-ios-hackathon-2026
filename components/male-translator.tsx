@@ -214,26 +214,13 @@ const buildLocalResult = (
     direction,
     isFallback: baseline.isFallback,
   })
-  // Keep in sync with attachFootnoteOrFallback in translate-pipeline —
-  // mismatched types make the footnote jump bubbles and look like it vanished.
-  const localEnhancement = {
-    type: baseline.isFallback
-      ? ("alternate_reading" as const)
-      : ("timing_check" as const),
-    text: localFootnote,
-    relationshipToDictionary: baseline.isFallback
-      ? ("adds_context" as const)
-      : ("supports" as const),
-    contextConflict: false,
-  }
 
   if (mode === "short_translation") {
     return {
       ...baseline,
       mode,
       input: text,
-      aiInsight: localFootnote,
-      aiEnhancement: localEnhancement,
+      timingWarning: localFootnote,
     }
   }
 
@@ -248,8 +235,7 @@ const buildLocalResult = (
     mode,
     input: text,
     extractedPhrase: phrase,
-    aiInsight: localFootnote,
-    aiEnhancement: localEnhancement,
+    timingWarning: localFootnote,
     analysis: {
       whyThisPhrase: rant.whatHappened,
       contextSignals: rant.likelyNonSeriousExplanations.slice(0, 3),
@@ -494,10 +480,6 @@ export function MaleTranslator({
             return turn
           }
 
-          const nextInsight =
-            enhanced.aiInsight?.trim() || turn.result.aiInsight
-          const nextEnhancement =
-            enhanced.aiEnhancement ?? turn.result.aiEnhancement
           const nextAnalysis = enhanced.analysis?.whyThisPhrase
             ? enhanced.analysis
             : (enhanced.analysis?.screenshotNotes?.length ?? 0) > 0
@@ -508,13 +490,14 @@ export function MaleTranslator({
             ...turn,
             result: {
               ...turn.result,
-              aiInsight: nextInsight,
-              aiEnhancement: nextEnhancement
-                ? {
-                    ...nextEnhancement,
-                    text: nextEnhancement.text?.trim() || nextInsight || "",
-                  }
-                : turn.result.aiEnhancement,
+              // Deterministic warning never gets replaced by AI text.
+              timingWarning:
+                turn.result.timingWarning ||
+                enhanced.timingWarning ||
+                undefined,
+              // AI footnote is AI-only — do not fall back to timing warning.
+              aiInsight: enhanced.aiInsight?.trim() || undefined,
+              aiEnhancement: enhanced.aiEnhancement,
               analysis: nextAnalysis,
               extractedPhrase:
                 enhanced.extractedPhrase ?? turn.result.extractedPhrase,
@@ -784,7 +767,8 @@ export function MaleTranslator({
       `Risk: ${result.riskLevel}`,
       `Lowest-risk reply: ${result.lowestRiskReply}`,
       `Nudge: ${result.tinyWholesomeNudge}`,
-      result.aiInsight ? `Footnote: ${result.aiInsight}` : null,
+      result.timingWarning ? `Timing: ${result.timingWarning}` : null,
+      result.aiInsight ? `AI note: ${result.aiInsight}` : null,
     ]
       .filter(Boolean)
       .join("\n")

@@ -150,6 +150,7 @@ const withMode = (
   extras?: {
     extractedPhrase?: string
     analysis?: TranslationAnalysis
+    timingWarning?: string
     aiInsight?: string
     aiEnhancement?: AiEnhancement
     inputOverride?: string
@@ -160,9 +161,54 @@ const withMode = (
   input: extras?.inputOverride ?? result.input,
   extractedPhrase: extras?.extractedPhrase,
   analysis: extras?.analysis,
+  timingWarning: extras?.timingWarning ?? result.timingWarning,
   aiInsight: extras?.aiInsight ?? result.aiInsight,
   aiEnhancement: extras?.aiEnhancement ?? result.aiEnhancement,
 })
+
+const buildDeterministicTimingWarning = (params: {
+  direction: TranslationDirection
+  isFallback: boolean
+}): string =>
+  buildLocalSupportingFootnote({
+    direction: params.direction,
+    isFallback: params.isFallback,
+  })
+
+const attachAiFootnote = async (params: {
+  baseline: TranslationResult
+  direction: TranslationDirection
+  sarcasmLevel: number
+  gatewayReady: boolean
+  context?: {
+    conversationSummary?: string
+    screenshotOwnerMessages?: string[]
+    screenshotMessages?: ScreenshotMessage[]
+    longInput?: string
+  }
+}): Promise<{
+  aiInsight?: string
+  aiEnhancement?: AiEnhancement
+}> => {
+  if (!params.gatewayReady) {
+    return {}
+  }
+
+  try {
+    const enhancement = await buildAiFootnote(params)
+    if (!enhancement?.text?.trim()) {
+      return {}
+    }
+
+    return {
+      aiInsight: enhancement.text,
+      aiEnhancement: enhancement,
+    }
+  } catch (error) {
+    console.error("AI footnote failed:", error)
+    return {}
+  }
+}
 
 const localLongAnalysis = (
   vent: string,
@@ -494,48 +540,19 @@ const attachFootnoteOrFallback = async (params: {
     longInput?: string
   }
 }): Promise<{
-  aiInsight: string
+  timingWarning: string
+  aiInsight?: string
   aiEnhancement?: AiEnhancement
 }> => {
-  const localFootnote = buildLocalSupportingFootnote({
+  const timingWarning = buildDeterministicTimingWarning({
     direction: params.direction,
     isFallback: params.baseline.isFallback,
   })
-  const localEnhancement: AiEnhancement = {
-    type: params.baseline.isFallback ? "alternate_reading" : "timing_check",
-    text: localFootnote,
-    relationshipToDictionary: params.baseline.isFallback
-      ? "adds_context"
-      : "supports",
-    contextConflict: false,
-  }
+  const ai = await attachAiFootnote(params)
 
-  if (!params.gatewayReady) {
-    return {
-      aiInsight: localFootnote,
-      aiEnhancement: localEnhancement,
-    }
-  }
-
-  try {
-    const enhancement = await buildAiFootnote(params)
-    if (!enhancement) {
-      return {
-        aiInsight: localFootnote,
-        aiEnhancement: localEnhancement,
-      }
-    }
-
-    return {
-      aiInsight: enhancement.text,
-      aiEnhancement: enhancement,
-    }
-  } catch (error) {
-    console.error("AI footnote failed:", error)
-    return {
-      aiInsight: localFootnote,
-      aiEnhancement: localEnhancement,
-    }
+  return {
+    timingWarning,
+    ...ai,
   }
 }
 
@@ -599,8 +616,9 @@ export const runTranslatePipeline = async (
     const dictionary = toDictionaryContext(baseline)
     let analysis: TranslationAnalysis | undefined
 
-    // 4–5. Supporting AI only, with exact dictionary context.
-    const { aiInsight, aiEnhancement } = await attachFootnoteOrFallback({
+    // 4–5. Deterministic timing warning + optional AI footnote (kept separate).
+    const { timingWarning, aiInsight, aiEnhancement } =
+      await attachFootnoteOrFallback({
       baseline,
       direction,
       sarcasmLevel,
@@ -630,6 +648,7 @@ export const runTranslatePipeline = async (
     }
 
     return withMode(baseline, "short_translation", {
+      timingWarning,
       aiInsight,
       aiEnhancement,
       analysis,
@@ -732,7 +751,8 @@ export const runTranslatePipeline = async (
     }
   }
 
-  const { aiInsight, aiEnhancement } = await attachFootnoteOrFallback({
+  const { timingWarning, aiInsight, aiEnhancement } =
+    await attachFootnoteOrFallback({
     baseline: {
       ...baseline,
       extractedPhrase,
@@ -752,6 +772,7 @@ export const runTranslatePipeline = async (
   return withMode(baseline, "long_context_translation", {
     extractedPhrase,
     analysis,
+    timingWarning,
     aiInsight,
     aiEnhancement,
     inputOverride: text,

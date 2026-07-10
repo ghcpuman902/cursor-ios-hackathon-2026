@@ -2,14 +2,12 @@
 
 import { Copy, Play, RefreshCw } from "lucide-react"
 
+import { AiNoteBubble } from "@/components/ai-note-bubble"
 import { GlassPanel } from "@/components/glass-panel"
 import { TacticalReadBubble } from "@/components/tactical-read-bubble"
 import { TimeSensitiveBubble } from "@/components/time-sensitive-bubble"
 import { Button } from "@/components/ui/button"
-import {
-  isTimeSensitiveEnhancement,
-  toBroAdviceFields,
-} from "@/lib/bro-format"
+import { toBroAdviceFields } from "@/lib/bro-format"
 import { toHerAdviceFields } from "@/lib/her-format"
 import type { TranslationResult } from "@/lib/translator"
 
@@ -195,21 +193,11 @@ export const TranslationResultCard = ({
 }: TranslationResultCardProps) => {
   const isFemaleTranslator = theme === "female-translator"
   const analysis = result.analysis
-  const enhancementType = result.aiEnhancement?.type
-  const footnoteText = result.aiInsight?.trim() || result.aiEnhancement?.text?.trim()
-  // Default unknown/missing types into the timing bubble so footnotes never vanish
-  // when the API flips type after the local optimistic result.
-  const isTimeSensitive =
-    !enhancementType || isTimeSensitiveEnhancement(enhancementType)
-
-  const softNoteInsight =
-    footnoteText && !isTimeSensitive ? footnoteText : undefined
-
-  const showTimeSensitive = Boolean(footnoteText && isTimeSensitive)
+  const timingWarning = result.timingWarning?.trim()
+  const aiInsight = result.aiInsight?.trim()
 
   const hasSoftNote =
     hasAnalysisBody(analysis) ||
-    Boolean(softNoteInsight) ||
     Boolean(
       analysis?.contextConflict || result.aiEnhancement?.contextConflict
     ) ||
@@ -235,18 +223,19 @@ export const TranslationResultCard = ({
         />
       )}
 
-      {showTimeSensitive && (
-        <TimeSensitiveBubble
-          text={footnoteText ?? ""}
-          isLoading={isFetchingAnalysis}
-          theme={theme}
-        />
+      {timingWarning && (
+        <TimeSensitiveBubble text={timingWarning} theme={theme} />
       )}
+
+      <AiNoteBubble
+        text={aiInsight}
+        isLoading={isFetchingAnalysis}
+        theme={theme}
+      />
 
       {hasSoftNote && (
         <TacticalReadBubble
           analysis={analysis}
-          aiInsight={softNoteInsight}
           contextConflict={
             Boolean(analysis?.contextConflict) ||
             Boolean(result.aiEnhancement?.contextConflict)

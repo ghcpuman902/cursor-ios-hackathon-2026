@@ -45,6 +45,7 @@ const translationResultSchema = z.object({
   matchedPattern: z.string().optional(),
   isFallback: z.boolean(),
   source: z.enum(["dictionary", "ai"]),
+  timingWarning: z.string().optional(),
   aiInsight: z.string().optional(),
   aiEnhancement: z
     .object({
