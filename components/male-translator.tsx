@@ -8,7 +8,7 @@ import {
   useState,
 } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { MessageSquarePlus } from "lucide-react"
+import { ArrowRight, MessageSquarePlus } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdaptiveComposer } from "@/components/adaptive-composer"
@@ -789,9 +789,11 @@ export function MaleTranslator({
                     aria-selected={gender === mode}
                     onClick={() => handleGenderChange(mode)}
                     disabled={isBusy}
-                    className="relative z-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                    className="relative z-1 inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:gap-1 sm:px-3"
                   >
-                    {mode === "male" ? "Him → You" : "Her → You"}
+                    <span>{mode === "male" ? "Him" : "Her"}</span>
+                    <ArrowRight className="size-3 shrink-0 opacity-70" aria-hidden />
+                    <span>You</span>
                   </button>
                 ))}
               </div>
@@ -834,7 +836,7 @@ export function MaleTranslator({
             </div>
           )}
 
-          <div className="shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <AdaptiveComposer
               value={input}
               onChange={(next) => {

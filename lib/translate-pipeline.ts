@@ -79,16 +79,16 @@ const phraseExtractionSchema = z.object({
     "action",
     "synthesised",
   ]),
-  sourceExcerpt: z.string().trim().min(1).max(240).optional(),
+  sourceExcerpt: z.string().trim().min(1).max(240).nullable(),
   confidence: z.enum(["low", "medium", "high"]),
   contextSignals: z.array(z.string().trim().min(1).max(120)).max(5),
-  extraStoryAdded: z.array(z.string().trim().min(1).max(120)).max(4).optional(),
+  extraStoryAdded: z.array(z.string().trim().min(1).max(120)).max(4),
 })
 
 const longAnalysisSchema = z.object({
   whyThisPhrase: z.string().trim().min(1).max(220),
   contextSignals: z.array(z.string().trim().min(1).max(120)).max(5),
-  extraStoryAdded: z.array(z.string().trim().min(1).max(120)).max(4).optional(),
+  extraStoryAdded: z.array(z.string().trim().min(1).max(120)).max(4),
   relationshipToDictionary: z.enum([
     "supports",
     "adds_context",
@@ -631,7 +631,7 @@ export const runTranslatePipeline = async (
       extractedPhrase = extracted.phrase
       phraseMeta = {
         sourceType: extracted.sourceType,
-        sourceExcerpt: extracted.sourceExcerpt,
+        sourceExcerpt: extracted.sourceExcerpt ?? undefined,
         confidence: extracted.confidence,
       }
       extractionSignals = extracted.contextSignals

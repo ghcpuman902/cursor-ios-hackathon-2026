@@ -159,6 +159,71 @@
     );
   }
 
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-gutter-stable {
+    scrollbar-gutter: stable;
+  }
+
+  .scrollbar-track-transparent {
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+
+  .scrollbar-thumb-transparent {
+    scrollbar-color: transparent transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(255 255 255 / 0.22);
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thumb-transparent::-webkit-scrollbar-thumb {
+    background-color: transparent;
+  }
+
+  .message-scroll-viewport {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+
+  .message-scroll-viewport::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .message-scroll-viewport::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .message-scroll-viewport::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(255 255 255 / 0.22);
+  }
+
+  .message-scroll-viewport[data-autoscrolling] {
+    scrollbar-color: transparent transparent;
+  }
+
+  .message-scroll-viewport[data-autoscrolling]::-webkit-scrollbar-thumb {
+    background-color: transparent;
+  }
+
   /*
    * iOS Safari: anchor the shell from the top with lvh instead of fixed-bottom
    * or dvh — avoids the URL-bar overlay / layout jump when chrome collapses.

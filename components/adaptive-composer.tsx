@@ -94,14 +94,24 @@ export const AdaptiveComposer = ({
     }
   }
 
-  const renderMicButton = () => {
+  const floatingActionClass =
+    "size-8 shrink-0 rounded-full border border-white/14 bg-white/12 text-white/85 backdrop-blur-md hover:bg-white/18"
+
+  const renderMicButton = (floating = false) => {
+    const buttonClass = floating
+      ? floatingActionClass
+      : "size-11 shrink-0 rounded-full border border-white/12 bg-white/8 text-white/80 hover:bg-white/14"
+
     if (!isMicSupported) {
       return (
         <Button
           type="button"
           variant="secondary"
           size="icon"
-          className="size-11 shrink-0 rounded-full border border-white/12 bg-white/[0.05] text-white/40"
+          className={cn(
+            buttonClass,
+            floating ? "bg-white/8 text-white/45" : "bg-white/5 text-white/40"
+          )}
           disabled
           aria-label={
             micUnsupportedReason === "insecure-context"
@@ -114,7 +124,7 @@ export const AdaptiveComposer = ({
               : "Microphone unavailable in this browser"
           }
         >
-          <Mic className="size-4" aria-hidden />
+          <Mic className="size-3.5" aria-hidden />
         </Button>
       )
     }
@@ -124,18 +134,47 @@ export const AdaptiveComposer = ({
         type="button"
         variant="secondary"
         size="icon"
-        className="size-11 shrink-0 rounded-full border border-white/12 bg-white/[0.08] text-white/80 hover:bg-white/14"
+        className={buttonClass}
         onClick={onToggleRecording}
         disabled={isBusy}
         aria-label="Start voice input"
       >
-        <Mic className="size-4" aria-hidden />
+        <Mic className={floating ? "size-3.5" : "size-4"} aria-hidden />
       </Button>
     )
   }
 
+  const renderScreenshotButton = (floating = false) => (
+    <>
+      <input
+        ref={screenshotInputRef}
+        id="composer-screenshot"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="sr-only"
+        onChange={handleScreenshotPick}
+        disabled={isBusy}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className={cn(
+          floating
+            ? floatingActionClass
+            : "size-10 rounded-full border border-white/12 bg-white/8 text-white/80 hover:bg-white/14"
+        )}
+        onClick={() => screenshotInputRef.current?.click()}
+        disabled={isBusy}
+        aria-label="Attach screenshot"
+      >
+        <ImageUp className={floating ? "size-3.5" : "size-4"} aria-hidden />
+      </Button>
+    </>
+  )
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {showPresets && !isRecording && (
         <PresetChips
           phrases={phrases}
@@ -146,7 +185,7 @@ export const AdaptiveComposer = ({
 
       <div
         className={cn(
-          "rounded-[1.75rem] border border-white/12 bg-white/[0.07] p-3 shadow-sm backdrop-blur-xl sm:p-4",
+          "rounded-2xl border border-white/12 bg-white/[0.07] p-2.5 shadow-sm backdrop-blur-xl sm:rounded-[1.75rem] sm:p-4",
           isRecording && "ring-1 ring-rose-400/30"
         )}
       >
@@ -159,7 +198,7 @@ export const AdaptiveComposer = ({
             onStop={onToggleRecording}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {screenshotPreviewUrl && (
               <AttachmentPreview
                 previewUrl={screenshotPreviewUrl}
@@ -169,40 +208,29 @@ export const AdaptiveComposer = ({
               />
             )}
 
-            <Textarea
-              aria-label={ariaLabel}
-              placeholder={resolvedPlaceholder}
-              value={value}
-              onChange={(event) => onChange(event.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={3}
-              className="min-h-24 resize-none border-0 bg-transparent px-1 py-1 text-base text-foreground shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0"
-              disabled={isBusy}
-            />
+            <div className="relative min-h-14 sm:static sm:min-h-0">
+              <Textarea
+                aria-label={ariaLabel}
+                placeholder={resolvedPlaceholder}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={2}
+                className="min-h-14 resize-none rounded-xl border-0 bg-transparent p-0 pb-9 text-base leading-snug text-foreground shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0 sm:min-h-24 sm:rounded-none sm:pb-1 sm:py-1"
+                disabled={isBusy}
+              />
 
-            <div className="flex items-end justify-between gap-3">
+              <div className="absolute bottom-0 left-0 z-10 sm:hidden">
+                {renderScreenshotButton(true)}
+              </div>
+              <div className="absolute right-0 bottom-0 z-10 sm:hidden">
+                {renderMicButton(true)}
+              </div>
+            </div>
+
+            <div className="hidden items-end justify-between gap-3 sm:flex">
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <input
-                  ref={screenshotInputRef}
-                  id="composer-screenshot"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="sr-only"
-                  onChange={handleScreenshotPick}
-                  disabled={isBusy}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  className="size-10 rounded-full border border-white/12 bg-white/[0.08] text-white/80 hover:bg-white/14"
-                  onClick={() => screenshotInputRef.current?.click()}
-                  disabled={isBusy}
-                  aria-label="Attach screenshot"
-                >
-                  <ImageUp className="size-4" aria-hidden />
-                </Button>
-
+                {renderScreenshotButton()}
                 <p className="hidden min-w-0 truncate text-[10px] text-muted-foreground sm:block">
                   ⌘/Ctrl + Enter
                 </p>
@@ -218,7 +246,7 @@ export const AdaptiveComposer = ({
         type="button"
         onClick={onSubmit}
         disabled={!canSubmit}
-        className="h-12 w-full rounded-full"
+        className="h-10 w-full rounded-full sm:h-12"
         size="lg"
       >
         <Send aria-hidden />
