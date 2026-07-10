@@ -42,7 +42,7 @@ function MessageScrollerViewport({
     <MessageScrollerPrimitive.Viewport
       data-slot="message-scroller-viewport"
       className={cn(
-        "message-scroll-viewport size-full min-h-0 min-w-0 scroll-fade-b overflow-y-auto overscroll-contain contain-content",
+        "message-scroll-viewport size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain contain-content",
         className
       )}
       {...props}
@@ -73,7 +73,7 @@ function MessageScrollerItem({
       data-slot="message-scroller-item"
       scrollAnchor={scrollAnchor}
       className={cn(
-        "min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]",
+        "min-w-0 shrink-0 scroll-mt-4 scroll-mb-4 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]",
         className
       )}
       {...props}

@@ -6,13 +6,16 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
 } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { ArrowRight, MessageSquarePlus } from "lucide-react"
+import { MessageSquarePlus } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdaptiveComposer } from "@/components/adaptive-composer"
 import { ChatTranscript } from "@/components/chat-transcript"
+import { MemeOverloadBackground } from "@/components/meme-overload-background"
+import { ProgressiveBlur } from "@/components/progressive-blur"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
@@ -28,6 +31,7 @@ import {
 } from "@/lib/input-classifier"
 import { deescalateRant } from "@/lib/rant"
 import { FEMALE_SAMPLE_PHRASES, MALE_SAMPLE_PHRASES } from "@/lib/translations"
+import { TRANSLATOR_PATHS } from "@/lib/translator-routes"
 import {
   buildLocalSupportingFootnote,
   genderToDirection,
@@ -45,7 +49,11 @@ import { cn } from "@/lib/utils"
 const GENDER_CONFIG = {
   male: {
     appName: "Male Translator™",
-    tagline: "His short texts, translated into cosy horoscope energy",
+    theme: "male-translator",
+    audienceLabel: "Female-facing translator",
+    submitLabel: "Decode the signal",
+    emptyThreadCopy:
+      "Paste his message, drop a screenshot, or use the mic. We’ll translate the signal without inventing a whole saga.",
     subjectLabel: "He said",
     resultLabel: "For you (her read)",
     typeLabel: "Paste what he said — or rant, we'll find the phrase",
@@ -57,7 +65,11 @@ const GENDER_CONFIG = {
   },
   female: {
     appName: "Female Translator™",
-    tagline: "Her subtext, translated into quest markers and bro tips",
+    theme: "female-translator",
+    audienceLabel: "Male-facing translator",
+    submitLabel: "Decode the quest",
+    emptyThreadCopy:
+      "Drop the message, screenshot, or voice note. We’ll check the quest log before you panic-text.",
     subjectLabel: "She said",
     resultLabel: "For you (his read)",
     typeLabel: "Paste what she said — or rant, we'll find the phrase",
@@ -70,8 +82,7 @@ const GENDER_CONFIG = {
 } as const
 
 type MaleTranslatorProps = {
-  appName?: string
-  tagline?: string
+  gender: TranslatorGender
   sarcasmLevel: number
   gruntMode: boolean
   translationDelayMs: number
@@ -145,7 +156,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[linear-gradient(160deg,#14234b_0%,#0c1228_46%,#170d29_100%)]"
       aria-hidden
     >
       <AnimatePresence mode="sync">
@@ -251,17 +262,12 @@ const buildLocalResult = (
 }
 
 export function MaleTranslator({
-  appName: appNameProp,
-  tagline: taglineProp,
+  gender,
   sarcasmLevel,
   gruntMode,
   translationDelayMs,
 }: MaleTranslatorProps) {
-  const [gender, setGender] = useState<TranslatorGender>("male")
   const genderConfig = GENDER_CONFIG[gender]
-  const appName =
-    gender === "male" && appNameProp ? appNameProp : genderConfig.appName
-  void taglineProp
 
   const {
     currentTurns,
@@ -279,10 +285,14 @@ export function MaleTranslator({
   const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<
     string | null
   >(null)
+  const [composerInset, setComposerInset] = useState(320)
+  const [headerInset, setHeaderInset] = useState(132)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const speechUrlRef = useRef<string | null>(null)
   const screenshotUrlRef = useRef<string | null>(null)
+  const composerRef = useRef<HTMLDivElement | null>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
   const requestIdRef = useRef(0)
   const activeTurnIdRef = useRef<string | null>(null)
 
@@ -294,6 +304,36 @@ export function MaleTranslator({
         URL.revokeObjectURL(screenshotUrlRef.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const composer = composerRef.current
+    if (!composer) return
+
+    const updateComposerInset = () => {
+      setComposerInset(Math.ceil(composer.getBoundingClientRect().height))
+    }
+    const resizeObserver = new ResizeObserver(updateComposerInset)
+
+    updateComposerInset()
+    resizeObserver.observe(composer)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+
+    const updateHeaderInset = () => {
+      setHeaderInset(Math.ceil(header.getBoundingClientRect().height))
+    }
+    const resizeObserver = new ResizeObserver(updateHeaderInset)
+
+    updateHeaderInset()
+    resizeObserver.observe(header)
+
+    return () => resizeObserver.disconnect()
   }, [])
 
   const clearScreenshot = useCallback(() => {
@@ -663,6 +703,19 @@ export function MaleTranslator({
     setSpeakingTurnId(null)
   }, [])
 
+  const previousGenderRef = useRef(gender)
+
+  useEffect(() => {
+    if (previousGenderRef.current === gender) return
+
+    previousGenderRef.current = gender
+    stopSpeechPlayback()
+    cancelInFlightWork()
+    setInput("")
+    setInputSource("typed")
+    clearScreenshot()
+  }, [gender, cancelInFlightWork, clearScreenshot, stopSpeechPlayback])
+
   const handleSpeakTranslation = async (
     turnId: string,
     result: TranslationResult
@@ -723,16 +776,6 @@ export function MaleTranslator({
     toast.success("Copied!")
   }
 
-  const handleGenderChange = (nextGender: TranslatorGender) => {
-    if (nextGender === gender) return
-    stopSpeechPlayback()
-    cancelInFlightWork()
-    setGender(nextGender)
-    setInput("")
-    setInputSource("typed")
-    clearScreenshot()
-  }
-
   const handleNewChat = () => {
     stopSpeechPlayback()
     cancelInFlightWork()
@@ -748,10 +791,34 @@ export function MaleTranslator({
 
   return (
     <>
-      <DynamicGenderBackground gender={gender} />
+      {gender === "male" ? (
+        <DynamicGenderBackground gender={gender} />
+      ) : (
+        <MemeOverloadBackground />
+      )}
 
-      <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-md flex-col">
-        <header className="shrink-0 space-y-3 px-1 pt-2 text-center sm:pt-4">
+      <div
+        className="translator-theme relative z-10 mx-auto flex h-full min-h-0 w-full max-w-md flex-col"
+        data-translator-theme={genderConfig.theme}
+        style={
+          {
+            "--composer-inset": `${composerInset}px`,
+            "--header-inset": `${headerInset}px`,
+          } as CSSProperties
+        }
+      >
+        <ProgressiveBlur
+          direction="top"
+          blurLayers={5}
+          blurIntensity={0.1}
+          className="fixed inset-x-0 top-0 z-10 w-screen"
+          style={{ height: `${headerInset + 44}px` }}
+        />
+
+        <header
+          ref={headerRef}
+          className="absolute inset-x-0 top-0 z-20 space-y-3 px-1 pt-2 text-center sm:pt-4"
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col items-start gap-1">
               {conversationStarted && (
@@ -771,38 +838,45 @@ export function MaleTranslator({
             </div>
 
             <div className="flex min-w-0 flex-col items-end gap-2">
-              <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
-                Translating for
+              <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                {genderConfig.audienceLabel}
               </span>
               <div
-                className="sliding-pill sliding-pill--glass relative flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
+                className="sliding-pill sliding-pill--glass translator-surface relative flex rounded-full border p-0.5 backdrop-blur-xl"
                 role="tablist"
-                aria-label="Translation target receiver"
+                aria-label="Translator product mode"
               >
                 {(["male", "female"] as const).map((mode) => (
-                  <button
+                  <Link
                     key={mode}
-                    type="button"
+                    href={TRANSLATOR_PATHS[mode]}
+                    scroll={false}
                     role="tab"
                     data-slot="pill-trigger"
                     data-active={gender === mode ? "" : undefined}
                     aria-selected={gender === mode}
-                    onClick={() => handleGenderChange(mode)}
-                    disabled={isBusy}
-                    className="relative z-1 inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:gap-1 sm:px-3"
+                    aria-disabled={isBusy}
+                    tabIndex={isBusy ? -1 : undefined}
+                    onClick={(event) => {
+                      if (isBusy) event.preventDefault()
+                    }}
+                    className={cn(
+                      "relative z-1 inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors sm:gap-1 sm:px-3",
+                      isBusy && "pointer-events-none opacity-50"
+                    )}
                   >
-                    <span>{mode === "male" ? "Him" : "Her"}</span>
-                    <ArrowRight className="size-3 shrink-0 opacity-70" aria-hidden />
-                    <span>You</span>
-                  </button>
+                    <span>
+                      {mode === "male" ? "Male Translator™" : "Female Translator™"}
+                    </span>
+                  </Link>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              {appName}
+              {genderConfig.appName}
             </h1>
           </div>
 
@@ -810,33 +884,38 @@ export function MaleTranslator({
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Badge
                 variant="outline"
-                className="rounded-full border-white/12 bg-white/[0.06] text-white/60 backdrop-blur-xl"
+                className="translator-control rounded-full border text-foreground/70 backdrop-blur-xl"
               >
-                {gender === "male" ? "Extra sparkle" : "Spicy footnotes"}
+                {gender === "male" ? "Extra sparkle" : "Bro mode: activated"}
               </Badge>
             </div>
           )}
         </header>
 
-        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
+        <div className="relative min-h-0 flex-1">
           {isHydrated ? (
             <ChatTranscript
               turns={currentTurns}
               resultLabel={genderConfig.resultLabel}
+              theme={genderConfig.theme}
+              emptyThreadCopy={genderConfig.emptyThreadCopy}
               speakingTurnId={speakingTurnId}
               onSpeak={(turnId, result) =>
                 void handleSpeakTranslation(turnId, result)
               }
               onCopy={(result) => void copyResult(result)}
-              className="min-h-0 flex-1"
+              className="absolute inset-0 min-h-0"
             />
           ) : (
-            <div className="flex flex-1 items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
             </div>
           )}
 
-          <div className="shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div
+            ref={composerRef}
+            className="absolute inset-x-0 bottom-0 z-20 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          >
             <AdaptiveComposer
               value={input}
               onChange={(next) => {
@@ -863,6 +942,8 @@ export function MaleTranslator({
               onToggleRecording={() => void handleToggleRecording()}
               onSelectPreset={handleSample}
               onSubmit={handleSubmit}
+              submitLabel={genderConfig.submitLabel}
+              theme={genderConfig.theme}
             />
 
             <footer className="mt-2 space-y-1 text-center text-[11px] text-muted-foreground/80">

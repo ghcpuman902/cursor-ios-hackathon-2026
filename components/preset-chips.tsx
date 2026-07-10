@@ -6,15 +6,20 @@ type PresetChipsProps = {
   phrases: readonly string[]
   disabled?: boolean
   onSelect: (phrase: string) => void
+  theme?: "male-translator" | "female-translator"
 }
 
 export const PresetChips = ({
   phrases,
   disabled = false,
   onSelect,
+  theme = "male-translator",
 }: PresetChipsProps) => {
+  const label =
+    theme === "female-translator" ? "Quest prompts" : "Message examples"
+
   return (
-    <div className="flex flex-wrap gap-2" role="list" aria-label="Preset phrases">
+    <div className="flex flex-wrap gap-2" role="list" aria-label={label}>
       {phrases.map((phrase) => (
         <Button
           key={phrase}
@@ -22,7 +27,7 @@ export const PresetChips = ({
           variant="outline"
           size="sm"
           role="listitem"
-          className="rounded-full border-white/12 bg-white/[0.06] text-white/70 hover:bg-white/12 hover:text-white"
+          className="translator-control rounded-full border text-foreground/80 backdrop-blur-sm hover:text-foreground"
           onClick={() => onSelect(phrase)}
           disabled={disabled}
         >

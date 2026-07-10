@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react"
 import { RefreshCw } from "lucide-react"
 
 import { TranslationResultCard } from "@/components/translation-result-card"
+import { ProgressiveBlur } from "@/components/progressive-blur"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Marker, MarkerContent } from "@/components/ui/marker"
 import { Message, MessageContent } from "@/components/ui/message"
@@ -25,6 +26,8 @@ import { cn } from "@/lib/utils"
 type ChatTranscriptProps = {
   turns: ChatTurn[]
   resultLabel: string
+  theme?: "male-translator" | "female-translator"
+  emptyThreadCopy: string
   speakingTurnId: string | null
   onSpeak: (turnId: string, result: TranslationResult) => void
   onCopy: (result: TranslationResult) => void
@@ -82,6 +85,7 @@ const TurnScrollAnchor = ({ turns }: { turns: ChatTurn[] }) => {
 const ChatTranscriptList = ({
   turns,
   resultLabel,
+  theme = "male-translator",
   speakingTurnId,
   onSpeak,
   onCopy,
@@ -93,7 +97,7 @@ const ChatTranscriptList = ({
     <MessageScroller className={cn("min-h-0 flex-1", className)}>
       <TurnScrollAnchor turns={turns} />
       <MessageScrollerViewport aria-label="Translation conversation">
-        <MessageScrollerContent className="gap-4 px-1 pb-2">
+        <MessageScrollerContent className="gap-4 px-1 pt-[calc(var(--header-inset)+1rem)] pb-[calc(var(--composer-inset)+var(--header-inset)+1rem)]">
           {turns.map((turn) => {
             const displayInput = turn.result
               ? (turn.result.extractedPhrase ?? turn.result.input)
@@ -104,7 +108,7 @@ const ChatTranscriptList = ({
                 key={turn.id}
                 messageId={turn.id}
                 scrollAnchor={turn.id === lastTurnId}
-                className="space-y-3"
+                className="scroll-mt-[calc(var(--header-inset)+1rem)] scroll-mb-[calc(var(--composer-inset)+var(--header-inset)+0.5rem)] space-y-3"
               >
                   <TurnBubble>
                     <Message align="end">
@@ -112,7 +116,7 @@ const ChatTranscriptList = ({
                         <Bubble
                           align="end"
                           variant="secondary"
-                          className="max-w-full rounded-3xl rounded-br-md border border-white/12 bg-white/[0.1] backdrop-blur-xl"
+                          className="translator-surface max-w-full rounded-3xl rounded-br-md border backdrop-blur-xl"
                         >
                           <BubbleContent className="rounded-3xl rounded-br-md px-4 py-3 text-sm text-foreground/90">
                             {displayInput}
@@ -157,6 +161,7 @@ const ChatTranscriptList = ({
                           <TranslationResultCard
                             result={turn.result}
                             resultLabel={resultLabel}
+                            theme={theme}
                             isFetchingAnalysis={turn.isFetchingAiInsight}
                             isSpeaking={speakingTurnId === turn.id}
                             onSpeak={() => onSpeak(turn.id, turn.result!)}
@@ -185,14 +190,22 @@ const ChatTranscriptList = ({
 
         <MessageScrollerButton
           direction="end"
-          className="border-white/12 bg-background/90 backdrop-blur-xl"
+          className="bottom-[calc(var(--composer-inset)+0.25rem)] border-border bg-background/90 backdrop-blur-xl"
         />
+
+        <ProgressiveBlur
+          direction="bottom"
+          blurLayers={5}
+          blurIntensity={0.12}
+          className="absolute inset-x-0 bottom-0 z-1 h-[calc(var(--composer-inset)+2rem)]"
+        />
+
       </MessageScroller>
   )
 }
 
 export const ChatTranscript = (props: ChatTranscriptProps) => {
-  const { turns, className } = props
+  const { turns, className, emptyThreadCopy } = props
 
   if (turns.length === 0) {
     return (
@@ -203,8 +216,7 @@ export const ChatTranscript = (props: ChatTranscriptProps) => {
         )}
       >
         <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-          Paste a text, drop a screenshot, or hold the mic — your translation
-          thread starts here.
+          {emptyThreadCopy}
         </p>
       </div>
     )

@@ -50,6 +50,15 @@
 :root {
   --app-shell: #1d1c2d;
   --app-shell-highlight: #1d1c2d;
+  --translator-surface: rgb(255 255 255 / 0.08);
+  --translator-surface-strong: rgb(255 255 255 / 0.12);
+  --translator-surface-subtle: rgb(255 255 255 / 0.06);
+  --translator-border: rgb(255 255 255 / 0.12);
+  --translator-border-strong: rgb(255 255 255 / 0.16);
+  --translator-highlight: rgb(255 255 255 / 0.12);
+  --translator-shadow: rgb(0 0 0 / 0.24);
+  --translator-control: rgb(255 255 255 / 0.08);
+  --translator-control-hover: rgb(255 255 255 / 0.14);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -118,6 +127,77 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+.translator-theme {
+  --translator-surface: rgb(255 255 255 / 0.08);
+  --translator-surface-strong: rgb(255 255 255 / 0.12);
+  --translator-surface-subtle: rgb(255 255 255 / 0.06);
+  --translator-border: rgb(255 255 255 / 0.12);
+  --translator-border-strong: rgb(255 255 255 / 0.16);
+  --translator-highlight: rgb(255 255 255 / 0.12);
+  --translator-shadow: rgb(0 0 0 / 0.24);
+  --translator-control: rgb(255 255 255 / 0.08);
+  --translator-control-hover: rgb(255 255 255 / 0.14);
+}
+
+.translator-theme[data-translator-theme="male-translator"] {
+  --app-shell: #0c1228;
+  --app-shell-highlight: #15224a;
+  --background: oklch(0.16 0.045 270);
+  --foreground: oklch(0.98 0.012 260);
+  --card: oklch(0.2 0.055 270);
+  --card-foreground: oklch(0.98 0.012 260);
+  --primary: oklch(0.8 0.15 18);
+  --primary-foreground: oklch(0.17 0.035 275);
+  --secondary: oklch(0.25 0.065 260);
+  --secondary-foreground: oklch(0.97 0.015 260);
+  --muted: oklch(0.24 0.045 265);
+  --muted-foreground: oklch(0.78 0.035 265);
+  --accent: oklch(0.3 0.085 250);
+  --accent-foreground: oklch(0.98 0.012 260);
+  --border: rgb(187 215 255 / 0.16);
+  --input: rgb(187 215 255 / 0.18);
+  --ring: oklch(0.72 0.16 18);
+  --translator-surface: rgb(218 232 255 / 0.08);
+  --translator-surface-strong: rgb(218 232 255 / 0.14);
+  --translator-surface-subtle: rgb(218 232 255 / 0.06);
+  --translator-border: rgb(192 216 255 / 0.18);
+  --translator-border-strong: rgb(214 228 255 / 0.27);
+  --translator-highlight: rgb(255 255 255 / 0.14);
+  --translator-shadow: rgb(1 7 29 / 0.42);
+  --translator-control: rgb(215 231 255 / 0.1);
+  --translator-control-hover: rgb(215 231 255 / 0.18);
+}
+
+.translator-theme[data-translator-theme="female-translator"] {
+  --app-shell: #17110b;
+  --app-shell-highlight: #2d1d0b;
+  --background: oklch(0.16 0.03 70);
+  --foreground: oklch(0.94 0.055 90);
+  --card: oklch(0.2 0.035 70);
+  --card-foreground: oklch(0.94 0.055 90);
+  --primary: oklch(0.8 0.125 82);
+  --primary-foreground: oklch(0.2 0.035 68);
+  --secondary: oklch(0.28 0.05 65);
+  --secondary-foreground: oklch(0.95 0.05 85);
+  --muted: oklch(0.24 0.035 65);
+  --muted-foreground: oklch(0.75 0.045 80);
+  --accent: oklch(0.36 0.075 63);
+  --accent-foreground: oklch(0.98 0.04 90);
+  --border: rgb(218 176 90 / 0.28);
+  --input: rgb(218 176 90 / 0.3);
+  --ring: oklch(0.77 0.13 82);
+  --radius: 0.35rem;
+  --translator-surface: rgb(61 43 21 / 0.84);
+  --translator-surface-strong: rgb(76 52 23 / 0.92);
+  --translator-surface-subtle: rgb(50 35 18 / 0.76);
+  --translator-border: rgb(218 176 90 / 0.3);
+  --translator-border-strong: rgb(242 204 119 / 0.48);
+  --translator-highlight: rgb(255 235 177 / 0.12);
+  --translator-shadow: rgb(0 0 0 / 0.52);
+  --translator-control: rgb(215 165 75 / 0.15);
+  --translator-control-hover: rgb(236 193 103 / 0.25);
 }
 
 @layer base {
@@ -258,8 +338,39 @@
 
   .glass-ring {
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 0 0 1px var(--translator-border),
+      inset 0 1px 0 var(--translator-highlight);
+  }
+
+  .translator-surface {
+    border-color: var(--translator-border);
+    background: var(--translator-surface);
+    box-shadow:
+      0 16px 48px var(--translator-shadow),
+      inset 0 1px 0 var(--translator-highlight);
+  }
+
+  .translator-surface-strong {
+    border-color: var(--translator-border-strong);
+    background: var(--translator-surface-strong);
+    box-shadow:
+      0 20px 60px var(--translator-shadow),
+      inset 0 1px 0 var(--translator-highlight);
+  }
+
+  .translator-surface-subtle {
+    border-color: var(--translator-border);
+    background: var(--translator-surface-subtle);
+    box-shadow: inset 0 1px 0 var(--translator-highlight);
+  }
+
+  .translator-control {
+    border-color: var(--translator-border);
+    background: var(--translator-control);
+  }
+
+  .translator-control:hover {
+    background: var(--translator-control-hover);
   }
 
   .gender-blob-male-blue {
@@ -427,13 +538,13 @@
 
   .sliding-pill--glass::before {
     border-radius: 9999px;
-    background: rgb(255 255 255 / 0.06);
+    background: var(--translator-control);
   }
 
   .sliding-pill--glass::after {
     border-radius: 9999px;
-    background: rgb(255 255 255 / 0.16);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+    background: var(--translator-control-hover);
+    box-shadow: 0 1px 2px var(--translator-shadow);
   }
 
   .sliding-pill--glass
@@ -452,5 +563,48 @@
       [data-slot="tabs-trigger"][data-state="active"]
     ) {
     color: white !important;
+  }
+
+  .translator-theme[data-translator-theme="female-translator"]
+    .sliding-pill--glass
+    :is([data-slot="pill-trigger"], [data-slot="tabs-trigger"]) {
+    color: color-mix(in oklch, var(--foreground) 68%, transparent) !important;
+  }
+
+  .translator-theme[data-translator-theme="female-translator"]
+    .sliding-pill--glass
+    :is(
+      [data-slot="pill-trigger"][data-active],
+      [data-slot="tabs-trigger"][data-state="active"]
+    ) {
+    color: var(--foreground) !important;
+  }
+
+  .meme-tile {
+    --meme-rotate: 0deg;
+    animation: meme-drift 18s ease-in-out infinite;
+    transform: rotate(var(--meme-rotate)) translate3d(0, 0, 0);
+    will-change: transform;
+  }
+
+  .meme-tile:nth-of-type(even) {
+    animation-delay: -7s;
+    animation-duration: 23s;
+  }
+
+  @keyframes meme-drift {
+    0%,
+    100% {
+      transform: rotate(var(--meme-rotate)) translate3d(0, 0, 0);
+    }
+    50% {
+      transform: rotate(var(--meme-rotate)) translate3d(0, -10px, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .meme-tile {
+      animation: none;
+    }
   }
 }

@@ -19,7 +19,7 @@ export const AttachmentPreview = ({
   onRemove,
 }: AttachmentPreviewProps) => {
   return (
-    <div className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.07] p-1.5 pr-2 shadow-sm backdrop-blur-xl">
+    <div className="translator-surface inline-flex max-w-full items-center gap-2 rounded-2xl border p-1.5 pr-2 backdrop-blur-xl">
       <div className="relative size-12 overflow-hidden rounded-xl bg-black/30">
         <Image
           src={previewUrl}
@@ -40,7 +40,7 @@ export const AttachmentPreview = ({
         type="button"
         variant="ghost"
         size="icon-sm"
-        className="size-7 shrink-0 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground"
+        className="size-7 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
         onClick={onRemove}
         disabled={disabled}
         aria-label="Remove screenshot"

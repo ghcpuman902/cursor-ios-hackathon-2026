@@ -42,6 +42,7 @@ type AdaptiveComposerProps = {
   onSelectPreset: (phrase: string) => void
   onSubmit: () => void
   submitLabel?: string
+  theme?: "male-translator" | "female-translator"
 }
 
 export const AdaptiveComposer = ({
@@ -68,6 +69,7 @@ export const AdaptiveComposer = ({
   onSelectPreset,
   onSubmit,
   submitLabel = "Send",
+  theme = "male-translator",
 }: AdaptiveComposerProps) => {
   const screenshotInputRef = useRef<HTMLInputElement | null>(null)
   const isRecording =
@@ -95,12 +97,12 @@ export const AdaptiveComposer = ({
   }
 
   const floatingActionClass =
-    "size-8 shrink-0 rounded-full border border-white/14 bg-white/12 text-white/85 backdrop-blur-md hover:bg-white/18"
+    "translator-control size-8 shrink-0 rounded-full border text-foreground/85 backdrop-blur-md"
 
   const renderMicButton = (floating = false) => {
     const buttonClass = floating
       ? floatingActionClass
-      : "size-11 shrink-0 rounded-full border border-white/12 bg-white/8 text-white/80 hover:bg-white/14"
+      : "translator-control size-11 shrink-0 rounded-full border text-foreground/80"
 
     if (!isMicSupported) {
       return (
@@ -110,7 +112,7 @@ export const AdaptiveComposer = ({
           size="icon"
           className={cn(
             buttonClass,
-            floating ? "bg-white/8 text-white/45" : "bg-white/5 text-white/40"
+            "text-foreground/40"
           )}
           disabled
           aria-label={
@@ -162,7 +164,7 @@ export const AdaptiveComposer = ({
         className={cn(
           floating
             ? floatingActionClass
-            : "size-10 rounded-full border border-white/12 bg-white/8 text-white/80 hover:bg-white/14"
+            : "translator-control size-10 rounded-full border text-foreground/80"
         )}
         onClick={() => screenshotInputRef.current?.click()}
         disabled={isBusy}
@@ -180,12 +182,13 @@ export const AdaptiveComposer = ({
           phrases={phrases}
           disabled={isBusy}
           onSelect={onSelectPreset}
+          theme={theme}
         />
       )}
 
       <div
         className={cn(
-          "rounded-2xl border border-white/12 bg-white/[0.07] p-2.5 shadow-sm backdrop-blur-xl sm:rounded-[1.75rem] sm:p-4",
+          "translator-surface rounded-2xl border p-2.5 backdrop-blur-xl sm:rounded-[1.75rem] sm:p-4",
           isRecording && "ring-1 ring-rose-400/30"
         )}
       >
@@ -246,7 +249,7 @@ export const AdaptiveComposer = ({
         type="button"
         onClick={onSubmit}
         disabled={!canSubmit}
-        className="h-10 w-full rounded-full sm:h-12"
+        className="h-10 w-full rounded-full border border-primary-foreground/10 bg-primary/85 backdrop-blur-sm hover:bg-primary/90 disabled:bg-primary/30 disabled:text-primary-foreground/45 disabled:opacity-100 sm:h-12"
         size="lg"
       >
         <Send aria-hidden />

@@ -13,6 +13,7 @@ type TranslationResultCardProps = {
   resultLabel: string
   isFetchingAnalysis?: boolean
   isSpeaking?: boolean
+  theme?: "male-translator" | "female-translator"
   onSpeak: () => void
   onCopy: () => void
 }
@@ -22,12 +23,29 @@ export const TranslationResultCard = ({
   resultLabel,
   isFetchingAnalysis = false,
   isSpeaking = false,
+  theme = "male-translator",
   onSpeak,
   onCopy,
 }: TranslationResultCardProps) => {
   const displayPhrase = result.extractedPhrase ?? result.input
   const showLongContext = result.mode === "long_context_translation"
   const analysis = result.analysis
+  const isFemaleTranslator = theme === "female-translator"
+  const labels = isFemaleTranslator
+    ? {
+        theory: "Mission intel",
+        reply: "Safe play",
+        analysis: "Tactical read",
+        loading: "Reading the quest log…",
+        refining: "Updating the battle plan…",
+      }
+    : {
+        theory: "Today's theory",
+        reply: "Lowest-risk reply",
+        analysis: "Analysis",
+        loading: "Reading the soft context…",
+        refining: "Refining…",
+      }
 
   return (
     <div className="w-full max-w-[88%]">
@@ -45,7 +63,7 @@ export const TranslationResultCard = ({
           {showLongContext && result.input !== displayPhrase && (
             <Badge
               variant="outline"
-              className="h-5 rounded-full border-white/12 bg-white/6 px-2 text-[10px] text-muted-foreground"
+              className="translator-control h-5 rounded-full border px-2 text-[10px] text-muted-foreground"
             >
               From a longer rant
             </Badge>
@@ -59,16 +77,16 @@ export const TranslationResultCard = ({
           &ldquo;{result.comicTranslation}&rdquo;
         </p>
 
-        <div className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm leading-relaxed text-foreground/80">
+        <div className="mt-3 space-y-2 border-t border-border/70 pt-3 text-sm leading-relaxed text-foreground/80">
           <p>
             <span className="font-medium text-foreground/90">
-              Today&apos;s theory:{" "}
+              {labels.theory}:{" "}
             </span>
             {result.possibleActualMeaning}
           </p>
           <p>
             <span className="font-medium text-foreground/90">
-              Lowest-risk reply:{" "}
+              {labels.reply}:{" "}
             </span>
             {result.lowestRiskReply}
           </p>
@@ -76,16 +94,16 @@ export const TranslationResultCard = ({
         </div>
 
         {(analysis || isFetchingAnalysis || result.aiInsight) && (
-          <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+          <div className="mt-3 space-y-2 border-t border-border/70 pt-3">
             <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
               <Sparkles className="size-3" aria-hidden />
-              Analysis
+              {labels.analysis}
             </p>
 
             {isFetchingAnalysis && !analysis && !result.aiInsight && (
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="size-3.5 animate-spin" aria-hidden />
-                Reading the soft context…
+                {labels.loading}
               </p>
             )}
 
@@ -153,7 +171,7 @@ export const TranslationResultCard = ({
             {isFetchingAnalysis && (analysis || result.aiInsight) && (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <RefreshCw className="size-3 animate-spin" aria-hidden />
-                Refining…
+                {labels.refining}
               </p>
             )}
           </div>
