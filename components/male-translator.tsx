@@ -32,10 +32,8 @@ import {
 import { deescalateRant } from "@/lib/rant"
 import { FEMALE_SAMPLE_PHRASES, MALE_SAMPLE_PHRASES } from "@/lib/translations"
 import { TRANSLATOR_PATHS } from "@/lib/translator-routes"
-import {
-  buildLocalSupportingFootnote,
-  genderToDirection,
-} from "@/lib/translate-prompts"
+import { resolveTimingCheck, timingCheckToFields } from "@/lib/timing-check"
+import { genderToDirection } from "@/lib/translate-prompts"
 import {
   getRandomLoadingMessage,
   getRandomFemaleLoadingMessage,
@@ -210,17 +208,20 @@ const buildLocalResult = (
       ? translateFemale(phrase, { sarcasmLevel, gruntMode })
       : translateMale(phrase, { sarcasmLevel, gruntMode })
 
-  const localFootnote = buildLocalSupportingFootnote({
-    direction,
-    isFallback: baseline.isFallback,
-  })
+  const timing = timingCheckToFields(
+    resolveTimingCheck({
+      direction,
+      messageText: text,
+      isFallback: baseline.isFallback,
+    })
+  )
 
   if (mode === "short_translation") {
     return {
       ...baseline,
       mode,
       input: text,
-      timingWarning: localFootnote,
+      ...timing,
     }
   }
 
@@ -235,7 +236,7 @@ const buildLocalResult = (
     mode,
     input: text,
     extractedPhrase: phrase,
-    timingWarning: localFootnote,
+    ...timing,
     analysis: {
       whyThisPhrase: rant.whatHappened,
       contextSignals: rant.likelyNonSeriousExplanations.slice(0, 3),
@@ -281,6 +282,7 @@ export function MaleTranslator({
   const screenshotUrlRef = useRef<string | null>(null)
   const composerRef = useRef<HTMLDivElement | null>(null)
   const headerRef = useRef<HTMLElement | null>(null)
+  const translatorThemeRef = useRef<HTMLDivElement | null>(null)
   const requestIdRef = useRef(0)
   const activeTurnIdRef = useRef<string | null>(null)
 
@@ -322,6 +324,31 @@ export function MaleTranslator({
     resizeObserver.observe(header)
 
     return () => resizeObserver.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const visualViewport = window.visualViewport
+    const translatorTheme = translatorThemeRef.current
+    if (!visualViewport || !translatorTheme) return
+
+    const updateVisualViewportBottom = () => {
+      const viewportBottom = visualViewport.height + visualViewport.offsetTop
+      const obscuredHeight = Math.max(0, window.innerHeight - viewportBottom)
+
+      translatorTheme.style.setProperty(
+        "--visual-viewport-bottom",
+        `${Math.ceil(obscuredHeight)}px`
+      )
+    }
+
+    updateVisualViewportBottom()
+    visualViewport.addEventListener("resize", updateVisualViewportBottom)
+    visualViewport.addEventListener("scroll", updateVisualViewportBottom)
+
+    return () => {
+      visualViewport.removeEventListener("resize", updateVisualViewportBottom)
+      visualViewport.removeEventListener("scroll", updateVisualViewportBottom)
+    }
   }, [])
 
   const clearScreenshot = useCallback(() => {
@@ -495,6 +522,8 @@ export function MaleTranslator({
                 turn.result.timingWarning ||
                 enhanced.timingWarning ||
                 undefined,
+              timingFlag:
+                turn.result.timingFlag || enhanced.timingFlag || undefined,
               // AI footnote is AI-only — do not fall back to timing warning.
               aiInsight: enhanced.aiInsight?.trim() || undefined,
               aiEnhancement: enhanced.aiEnhancement,
@@ -767,6 +796,7 @@ export function MaleTranslator({
       `Risk: ${result.riskLevel}`,
       `Lowest-risk reply: ${result.lowestRiskReply}`,
       `Nudge: ${result.tinyWholesomeNudge}`,
+      result.timingFlag ? `Timing flag: ${result.timingFlag}` : null,
       result.timingWarning ? `Timing: ${result.timingWarning}` : null,
       result.aiInsight ? `AI note: ${result.aiInsight}` : null,
     ]
@@ -798,7 +828,8 @@ export function MaleTranslator({
       )}
 
       <div
-        className="translator-theme relative z-10 mx-auto flex h-full min-h-0 w-full max-w-md flex-col"
+        ref={translatorThemeRef}
+        className="translator-theme relative z-10 mx-auto flex min-h-dvh w-full max-w-md flex-col"
         data-translator-theme={genderConfig.theme}
         style={
           {
@@ -817,7 +848,7 @@ export function MaleTranslator({
 
         <header
           ref={headerRef}
-          className="absolute inset-x-0 top-0 z-20 space-y-3 px-1 pt-2 text-center sm:pt-4"
+          className="fixed top-0 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 space-y-3 px-1 pt-[max(0.75rem,env(safe-area-inset-top))] text-center sm:pt-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col items-start gap-1">
@@ -892,7 +923,7 @@ export function MaleTranslator({
           )}
         </header>
 
-        <div className="relative min-h-0 flex-1">
+        <div className="relative flex min-h-dvh flex-1 flex-col">
           {isHydrated ? (
             <ChatTranscript
               turns={currentTurns}
@@ -904,17 +935,17 @@ export function MaleTranslator({
                 void handleSpeakTranslation(turnId, result)
               }
               onCopy={(result) => void copyResult(result)}
-              className="absolute inset-0 min-h-0"
+              className="min-h-dvh"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex min-h-dvh items-center justify-center">
               <div className="size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
             </div>
           )}
 
           <div
             ref={composerRef}
-            className="absolute inset-x-0 bottom-0 z-20 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed bottom-(--visual-viewport-bottom) left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
             <AdaptiveComposer
               value={input}

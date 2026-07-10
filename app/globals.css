@@ -130,6 +130,7 @@
 }
 
 .translator-theme {
+  --visual-viewport-bottom: 0px;
   --translator-surface: rgb(255 255 255 / 0.08);
   --translator-surface-strong: rgb(255 255 255 / 0.12);
   --translator-surface-subtle: rgb(255 255 255 / 0.06);
@@ -218,13 +219,8 @@
     background-color: var(--app-shell);
     margin: 0;
     padding: 0;
-    overflow: hidden;
-  }
-
-  @media (min-width: 640px) {
-    body {
-      overflow: auto;
-    }
+    overflow: auto;
+    overscroll-behavior-y: none;
   }
 }
 
@@ -305,35 +301,14 @@
   }
 
   /*
-   * iOS Safari: anchor the shell from the top with lvh instead of fixed-bottom
-   * or dvh — avoids the URL-bar overlay / layout jump when chrome collapses.
+   * Let Safari own document scrolling. The shell fills the visual viewport
+   * when content is short and grows naturally when the transcript is taller.
    */
   .mobile-app-shell {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
+    position: relative;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    height: 100dvh;
-    max-height: 100dvh;
-    min-height: 0;
-  }
-
-  @supports (height: 100lvh) {
-    .mobile-app-shell {
-      height: 100lvh;
-      max-height: 100lvh;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .mobile-app-shell {
-      position: relative;
-      height: 100dvh;
-      max-height: none;
-    }
+    min-height: 100dvh;
   }
 
   .glass-ring {

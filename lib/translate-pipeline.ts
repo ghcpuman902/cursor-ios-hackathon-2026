@@ -18,9 +18,12 @@ import { deescalateRant } from "@/lib/rant"
 import { isGatewayConfigured } from "@/lib/server-env"
 import type { TranslationDirection } from "@/lib/translation-types"
 import {
+  resolveTimingCheck,
+  timingCheckToFields,
+} from "@/lib/timing-check"
+import {
   buildFootnotePrompt,
   buildLocalScreenshotNotes,
-  buildLocalSupportingFootnote,
   buildLongAnalysisPrompt,
   buildPhraseExtractionPrompt,
   buildScreenshotExtractionPrompt,
@@ -151,6 +154,7 @@ const withMode = (
     extractedPhrase?: string
     analysis?: TranslationAnalysis
     timingWarning?: string
+    timingFlag?: string
     aiInsight?: string
     aiEnhancement?: AiEnhancement
     inputOverride?: string
@@ -162,18 +166,23 @@ const withMode = (
   extractedPhrase: extras?.extractedPhrase,
   analysis: extras?.analysis,
   timingWarning: extras?.timingWarning ?? result.timingWarning,
+  timingFlag: extras?.timingFlag ?? result.timingFlag,
   aiInsight: extras?.aiInsight ?? result.aiInsight,
   aiEnhancement: extras?.aiEnhancement ?? result.aiEnhancement,
 })
 
 const buildDeterministicTimingWarning = (params: {
   direction: TranslationDirection
+  messageText: string
   isFallback: boolean
-}): string =>
-  buildLocalSupportingFootnote({
-    direction: params.direction,
-    isFallback: params.isFallback,
-  })
+}): { timingWarning?: string; timingFlag?: string } =>
+  timingCheckToFields(
+    resolveTimingCheck({
+      direction: params.direction,
+      messageText: params.messageText,
+      isFallback: params.isFallback,
+    })
+  )
 
 const attachAiFootnote = async (params: {
   baseline: TranslationResult
@@ -540,18 +549,20 @@ const attachFootnoteOrFallback = async (params: {
     longInput?: string
   }
 }): Promise<{
-  timingWarning: string
+  timingWarning?: string
+  timingFlag?: string
   aiInsight?: string
   aiEnhancement?: AiEnhancement
 }> => {
-  const timingWarning = buildDeterministicTimingWarning({
+  const timing = buildDeterministicTimingWarning({
     direction: params.direction,
+    messageText: params.baseline.input,
     isFallback: params.baseline.isFallback,
   })
   const ai = await attachAiFootnote(params)
 
   return {
-    timingWarning,
+    ...timing,
     ...ai,
   }
 }
@@ -617,7 +628,7 @@ export const runTranslatePipeline = async (
     let analysis: TranslationAnalysis | undefined
 
     // 4–5. Deterministic timing warning + optional AI footnote (kept separate).
-    const { timingWarning, aiInsight, aiEnhancement } =
+    const { timingWarning, timingFlag, aiInsight, aiEnhancement } =
       await attachFootnoteOrFallback({
       baseline,
       direction,
@@ -649,6 +660,7 @@ export const runTranslatePipeline = async (
 
     return withMode(baseline, "short_translation", {
       timingWarning,
+      timingFlag,
       aiInsight,
       aiEnhancement,
       analysis,
@@ -751,7 +763,7 @@ export const runTranslatePipeline = async (
     }
   }
 
-  const { timingWarning, aiInsight, aiEnhancement } =
+  const { timingWarning, timingFlag, aiInsight, aiEnhancement } =
     await attachFootnoteOrFallback({
     baseline: {
       ...baseline,
@@ -773,6 +785,7 @@ export const runTranslatePipeline = async (
     extractedPhrase,
     analysis,
     timingWarning,
+    timingFlag,
     aiInsight,
     aiEnhancement,
     inputOverride: text,

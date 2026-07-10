@@ -194,6 +194,7 @@ export const TranslationResultCard = ({
   const isFemaleTranslator = theme === "female-translator"
   const analysis = result.analysis
   const timingWarning = result.timingWarning?.trim()
+  const timingFlag = result.timingFlag?.trim()
   const aiInsight = result.aiInsight?.trim()
 
   const hasSoftNote =
@@ -202,6 +203,8 @@ export const TranslationResultCard = ({
       analysis?.contextConflict || result.aiEnhancement?.contextConflict
     ) ||
     (isFetchingAnalysis && hasAnalysisBody(analysis))
+
+  const showTimingCheck = Boolean(timingWarning && timingFlag)
 
   return (
     <div className="w-full max-w-[88%] space-y-2">
@@ -223,8 +226,12 @@ export const TranslationResultCard = ({
         />
       )}
 
-      {timingWarning && (
-        <TimeSensitiveBubble text={timingWarning} theme={theme} />
+      {showTimingCheck && (
+        <TimeSensitiveBubble
+          text={timingWarning!}
+          flag={timingFlag!}
+          theme={theme}
+        />
       )}
 
       <AiNoteBubble

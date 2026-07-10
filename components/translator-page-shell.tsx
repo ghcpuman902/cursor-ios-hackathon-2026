@@ -6,7 +6,7 @@ type TranslatorPageShellProps = {
 
 export const TranslatorPageShell = ({ children }: TranslatorPageShellProps) => {
   return (
-    <main className="mobile-app-shell app-shell-bg relative min-h-0 flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <main className="mobile-app-shell app-shell-bg px-4">
       {children}
     </main>
   )

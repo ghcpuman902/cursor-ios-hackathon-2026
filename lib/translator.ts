@@ -71,6 +71,8 @@ export type TranslationResult = {
   source: "dictionary" | "ai"
   /** Deterministic timing / hunger / lag warning — never AI-written */
   timingWarning?: string
+  /** Why the timing bubble is showing (clock or message trigger) */
+  timingFlag?: string
   /** Optional AI-written supplemental footnote text (mirrors aiEnhancement.text) */
   aiInsight?: string
   /** Structured short-input / footnote enhancement */

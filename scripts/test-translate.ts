@@ -9,6 +9,7 @@ import {
   resolvePipelineMode,
 } from "../lib/input-classifier"
 import { runTranslatePipeline } from "../lib/translate-pipeline"
+import { resolveTimingCheck } from "../lib/timing-check"
 import {
   aiFailureFallback,
   buildFootnotePrompt,
@@ -286,31 +287,95 @@ const assertPromptArchitecture = () => {
   console.log("✓ Prompt architecture: styles, few-shots, intensity, fallbacks")
 }
 
+const assertTimingCheck = () => {
+  const lateNight = new Date("2026-07-10T23:30:00")
+  const lunch = new Date("2026-07-10T12:15:00")
+  const afternoon = new Date("2026-07-10T15:30:00")
+
+  const midnightMessage = resolveTimingCheck({
+    direction: "female_to_male",
+    messageText: "the match kicks off at 1am",
+    isFallback: false,
+    now: afternoon,
+  })
+  assert(
+    Boolean(midnightMessage?.flag.includes("late night")),
+    "Message mentioning 1am should trigger timing check even off-peak"
+  )
+  assert(
+    Boolean(midnightMessage?.message),
+    "Timing check should include advice text"
+  )
+
+  const clockLate = resolveTimingCheck({
+    direction: "male_to_female",
+    messageText: "k",
+    isFallback: false,
+    now: lateNight,
+  })
+  assert(
+    Boolean(clockLate?.flag.includes("late night")),
+    "Late-night clock should trigger timing check"
+  )
+
+  const lunchHour = resolveTimingCheck({
+    direction: "female_to_male",
+    messageText: "whatever",
+    isFallback: false,
+    now: lunch,
+  })
+  assert(
+    Boolean(lunchHour?.flag.includes("lunch")),
+    "Lunch hour clock should trigger timing check"
+  )
+
+  const quietAfternoon = resolveTimingCheck({
+    direction: "male_to_female",
+    messageText: "k",
+    isFallback: false,
+    now: afternoon,
+  })
+  assert(
+    quietAfternoon === null,
+    "Generic short message off-peak should not trigger timing check"
+  )
+
+  console.log("✓ Timing check: only fires for real clock/message triggers with flag")
+}
+
 const assertDictionaryBeforeAiOrder = async () => {
   const previousApiKey = process.env.AI_GATEWAY_API_KEY
   const previousOidcToken = process.env.VERCEL_OIDC_TOKEN
   delete process.env.AI_GATEWAY_API_KEY
   delete process.env.VERCEL_OIDC_TOKEN
 
-  const shortBaseline = translateMale("k", {
+  const shortBaseline = translateMale("the match kicks off at 1am", {
     sarcasmLevel: 7,
     gruntMode: false,
   })
   const shortResult = await runTranslatePipeline({
-    text: "k",
+    text: "the match kicks off at 1am",
     direction: "male_to_female",
     sarcasmLevel: 7,
     gruntMode: false,
   })
 
-  assertPrimaryFieldsUnchanged(shortBaseline, shortResult, "short k")
+  assertPrimaryFieldsUnchanged(
+    shortBaseline,
+    shortResult,
+    "short late kick-off"
+  )
   assert(
     shortResult.source === "dictionary",
     "Expected dictionary source without Gateway"
   )
   assert(
     Boolean(shortResult.timingWarning?.trim()),
-    "Without Gateway, a deterministic timing warning must still follow the dictionary card"
+    "Time-relevant message should attach a deterministic timing warning"
+  )
+  assert(
+    Boolean(shortResult.timingFlag?.trim()),
+    "Timing warning must include a flag explaining why it showed"
   )
   assert(
     !shortResult.aiInsight?.trim(),
@@ -318,12 +383,14 @@ const assertDictionaryBeforeAiOrder = async () => {
   )
   assert(
     Boolean(
-      shortResult.timingWarning?.includes("literal") ||
-        shortResult.timingWarning?.includes("timing") ||
+      shortResult.timingWarning?.includes("sleep") ||
+        shortResult.timingWarning?.includes("late") ||
+        shortResult.timingWarning?.includes("morning") ||
+        shortResult.timingWarning?.includes("Hunger") ||
         shortResult.timingWarning?.includes("hunger") ||
-        shortResult.timingWarning?.includes("tiredness") ||
-        shortResult.timingWarning?.includes("subplot") ||
-        shortResult.timingWarning?.includes("season")
+        shortResult.timingWarning?.includes("Timing") ||
+        shortResult.timingWarning?.includes("timing") ||
+        shortResult.timingWarning?.includes("tiredness")
     ),
     "Timing warning should be on-brand deterministic copy"
   )
@@ -422,17 +489,36 @@ const assertLiveGateway = async () => {
 
     assertPrimaryFieldsUnchanged(baseline, generatedResult, promptCase.text)
 
-    assert(
-      Boolean(generatedResult.timingWarning?.trim()),
-      `Missing deterministic timing warning for "${promptCase.text}"`
-    )
+    const expectedTiming = resolveTimingCheck({
+      direction:
+        promptCase.gender === "female" ? "female_to_male" : "male_to_female",
+      messageText: promptCase.text,
+      isFallback: baseline.isFallback,
+    })
+
+    if (expectedTiming) {
+      assert(
+        Boolean(generatedResult.timingWarning?.trim()),
+        `Missing deterministic timing warning for "${promptCase.text}"`
+      )
+      assert(
+        Boolean(generatedResult.timingFlag?.trim()),
+        `Missing timing flag for "${promptCase.text}"`
+      )
+      assert(
+        generatedResult.timingWarning !== generatedResult.aiInsight,
+        "timingWarning and aiInsight must stay separate"
+      )
+    } else {
+      assert(
+        !generatedResult.timingWarning?.trim(),
+        `Timing warning should stay hidden off-peak for "${promptCase.text}"`
+      )
+    }
+
     assert(
       Boolean(generatedResult.aiInsight?.trim()),
       `Gateway did not attach a supplemental AI note for "${promptCase.text}"`
-    )
-    assert(
-      generatedResult.timingWarning !== generatedResult.aiInsight,
-      "timingWarning and aiInsight must stay separate"
     )
 
     if (generatedResult.aiEnhancement) {
@@ -457,6 +543,7 @@ const main = async () => {
   assertClassifier()
   assertDictionaryContextContract()
   assertPromptArchitecture()
+  assertTimingCheck()
   await assertDictionaryBeforeAiOrder()
   await assertRouteDictionaryFallback()
   await assertLiveGateway()

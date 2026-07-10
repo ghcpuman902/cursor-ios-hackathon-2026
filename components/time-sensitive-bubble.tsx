@@ -9,19 +9,23 @@ import { formatHerTimeSensitive } from "@/lib/her-format"
 type TimeSensitiveBubbleProps = {
   /** Deterministic timing warning only — never AI text */
   text: string
+  /** Why this bubble is showing */
+  flag: string
   theme?: "male-translator" | "female-translator"
 }
 
 export const TimeSensitiveBubble = ({
   text,
+  flag,
   theme = "female-translator",
 }: TimeSensitiveBubbleProps) => {
   const isBro = theme === "female-translator"
   const displayText = isBro
     ? formatBroTimeSensitive(text)
     : formatHerTimeSensitive(text)
+  const displayFlag = isBro ? flag.toLowerCase() : flag
 
-  if (!displayText) return null
+  if (!displayText || !displayFlag) return null
 
   return (
     <GlassPanel
@@ -31,6 +35,9 @@ export const TimeSensitiveBubble = ({
       <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
         <Clock className="size-3" aria-hidden />
         {isBro ? "time check" : "Timing"}
+      </p>
+      <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+        {isBro ? `why: ${displayFlag}` : `Showing because: ${displayFlag}`}
       </p>
       <p className="text-sm leading-relaxed text-foreground/80">{displayText}</p>
     </GlassPanel>
