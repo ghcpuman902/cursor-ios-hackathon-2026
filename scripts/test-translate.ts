@@ -1,5 +1,10 @@
 import { POST } from "../app/api/translate/route"
 import {
+  classifyInput,
+  extractPhraseHeuristic,
+  resolvePipelineMode,
+} from "../lib/input-classifier"
+import {
   translateFemale,
   translateMale,
   type TranslationResult,
@@ -11,32 +16,35 @@ type TranslationResponse = Partial<TranslationResult> & {
 }
 
 type PromptCase = {
-  input: string
+  text: string
   gender: TranslatorGender
   sarcasmLevel: number
 }
 
 const PROMPT_CASES: PromptCase[] = [
-  { input: "k", gender: "male", sarcasmLevel: 7 },
+  { text: "k", gender: "male", sarcasmLevel: 7 },
   {
-    input: "I'm almost there",
+    text: "I'm almost there",
     gender: "male",
     sarcasmLevel: 9,
   },
   {
-    input: "We need to talk",
+    text: "We need to talk",
     gender: "female",
     sarcasmLevel: 7,
   },
   {
-    input: "Per my last email",
+    text: "Per my last email",
     gender: "female",
     sarcasmLevel: 9,
   },
 ]
 
+const LONG_RANT =
+  "Okay so honestly I just need to vent because every time this happens I spiral and then I start rewriting the whole relationship in my head and anyway they said \"I'm fine\" and now I cannot stop thinking about it."
+
 const createTranslationRequest = ({
-  input,
+  text,
   gender,
   sarcasmLevel,
 }: PromptCase) =>
@@ -44,10 +52,11 @@ const createTranslationRequest = ({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      input,
+      text,
       gender,
       sarcasmLevel,
       gruntMode: false,
+      inputSource: "typed",
     }),
   })
 
@@ -63,14 +72,37 @@ const requestTranslation = async (
     )
   }
 
-  if (!body.translation) {
-    throw new Error("Translation route returned no translation")
+  if (!body.translation || !body.mode) {
+    throw new Error("Translation route returned an incomplete payload")
   }
 
   return body as TranslationResult
 }
 
+const assertClassifier = () => {
+  if (classifyInput("k") !== "short") {
+    throw new Error('Expected "k" to classify as short')
+  }
+
+  if (resolvePipelineMode("I'm fine") !== "short_translation") {
+    throw new Error("Expected short phrase to use short_translation mode")
+  }
+
+  if (classifyInput(LONG_RANT) !== "long") {
+    throw new Error("Expected rant to classify as long")
+  }
+
+  const phrase = extractPhraseHeuristic(LONG_RANT)
+  if (!phrase.toLowerCase().includes("fine")) {
+    throw new Error(`Expected heuristic to prefer quoted phrase, got: ${phrase}`)
+  }
+
+  console.log("✓ Input classifier short/long heuristics")
+}
+
 const main = async () => {
+  assertClassifier()
+
   const previousApiKey = process.env.AI_GATEWAY_API_KEY
   const previousOidcToken = process.env.VERCEL_OIDC_TOKEN
 
@@ -85,8 +117,30 @@ const main = async () => {
     )
   }
 
+  if (dictionaryResult.mode !== "short_translation") {
+    throw new Error("Expected short_translation mode for short input")
+  }
+
   console.log(
     "✓ Translation route uses dictionary fallback without Gateway auth"
+  )
+
+  const longResult = await requestTranslation({
+    text: LONG_RANT,
+    gender: "female",
+    sarcasmLevel: 7,
+  })
+
+  if (longResult.mode !== "long_context_translation") {
+    throw new Error("Expected long_context_translation for rant input")
+  }
+
+  if (!longResult.extractedPhrase?.trim()) {
+    throw new Error("Expected extractedPhrase for long input")
+  }
+
+  console.log(
+    `✓ Long input extracted phrase: "${longResult.extractedPhrase}"`
   )
 
   if (previousApiKey) {
@@ -107,11 +161,11 @@ const main = async () => {
   for (const promptCase of PROMPT_CASES) {
     const baseline =
       promptCase.gender === "female"
-        ? translateFemale(promptCase.input, {
+        ? translateFemale(promptCase.text, {
             sarcasmLevel: promptCase.sarcasmLevel,
             gruntMode: false,
           })
-        : translateMale(promptCase.input, {
+        : translateMale(promptCase.text, {
             sarcasmLevel: promptCase.sarcasmLevel,
             gruntMode: false,
           })
@@ -124,17 +178,17 @@ const main = async () => {
       generatedResult.matchedPattern !== baseline.matchedPattern
     ) {
       throw new Error(
-        `AI enhancement changed the primary dictionary reply for "${promptCase.input}"`
+        `AI enhancement changed the primary dictionary reply for "${promptCase.text}"`
       )
     }
 
     if (!generatedResult.aiInsight?.trim()) {
       throw new Error(
-        `Gateway did not attach a supplemental AI note for "${promptCase.input}"`
+        `Gateway did not attach a supplemental AI note for "${promptCase.text}"`
       )
     }
 
-    console.log(`✓ ${promptCase.gender} "${promptCase.input}"`)
+    console.log(`✓ ${promptCase.gender} "${promptCase.text}"`)
     console.log(`  dictionary: ${generatedResult.translation}`)
     console.log(`  ai analysis: ${generatedResult.aiInsight}`)
   }

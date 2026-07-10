@@ -8,6 +8,7 @@ import {
   LOADING_MESSAGES,
   MALE_TRANSLATIONS,
 } from "@/lib/translations"
+import type { TranslationPipelineMode } from "@/lib/input-classifier"
 import type {
   RiskLevel,
   TranslationCategory,
@@ -24,9 +25,22 @@ export type TranslationOptions = {
   contextTags?: string[]
 }
 
+export type { TranslationPipelineMode }
+
+export type TranslationAnalysis = {
+  whyThisPhrase?: string
+  contextSignals?: string[]
+  screenshotNotes?: string[]
+  whatUserBrainAdded?: string[]
+}
+
 export type TranslationResult = {
   input: string
   direction: TranslationDirection
+  /** Adaptive pipeline mode — short phrase vs long-context extract */
+  mode: TranslationPipelineMode
+  /** For long input: the phrase actually translated */
+  extractedPhrase?: string
   headline: string
   /** Primary comic line (also mirrored on `translation` for older callers) */
   comicTranslation: string
@@ -43,6 +57,8 @@ export type TranslationResult = {
   source: "dictionary" | "ai"
   /** Optional AI-written supplemental footnote */
   aiInsight?: string
+  /** Optional richer analysis for long / screenshot context */
+  analysis?: TranslationAnalysis
 }
 
 type TranslationDictionary = {
@@ -187,6 +203,7 @@ const entryToResult = (
   return {
     input,
     direction,
+    mode: "short_translation",
     headline: entry.headline,
     comicTranslation,
     translation: comicTranslation,

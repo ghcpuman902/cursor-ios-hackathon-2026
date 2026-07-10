@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 
 import {
   getAudioCaptureSupport,
@@ -32,6 +38,27 @@ function createIdleLevels(): number[] {
   return Array.from({ length: LIVE_BAR_COUNT }, () => 0.12)
 }
 
+/** Stable snapshot for SSR — must not allocate a new object per call. */
+const SSR_AUDIO_SUPPORT = {
+  isSupported: true,
+  blockReason: null as AudioCaptureBlockReason | null,
+  isSecureContext: true,
+  hasGetUserMedia: true,
+  hasMediaRecorder: true,
+} as const
+
+let cachedClientAudioSupport: ReturnType<typeof getAudioCaptureSupport> | null =
+  null
+
+const getClientAudioCaptureSupport = () => {
+  if (cachedClientAudioSupport === null) {
+    cachedClientAudioSupport = getAudioCaptureSupport()
+  }
+  return cachedClientAudioSupport
+}
+
+const subscribeToAudioCaptureSupport = () => () => {}
+
 function averageLevel(levels: number[]): number {
   if (levels.length === 0) return 0.12
   return levels.reduce((sum, level) => sum + level, 0) / levels.length
@@ -56,15 +83,13 @@ export const useAudioRecorder = ({
   const startedAtRef = useRef<number | null>(null)
   const lastSampleAtRef = useRef(0)
 
-  const [isSupported, setIsSupported] = useState(true)
-  const [unsupportedReason, setUnsupportedReason] =
-    useState<AudioCaptureBlockReason | null>(null)
-
-  useEffect(() => {
-    const support = getAudioCaptureSupport()
-    setIsSupported(support.isSupported)
-    setUnsupportedReason(support.blockReason)
-  }, [])
+  const audioSupport = useSyncExternalStore(
+    subscribeToAudioCaptureSupport,
+    getClientAudioCaptureSupport,
+    () => SSR_AUDIO_SUPPORT
+  )
+  const isSupported = audioSupport.isSupported
+  const unsupportedReason = audioSupport.blockReason
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {

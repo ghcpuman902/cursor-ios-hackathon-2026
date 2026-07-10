@@ -1,43 +1,26 @@
 "use client"
 
-import Image from "next/image"
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
 } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import {
-  ArrowRight,
-  Copy,
-  ImageUp,
-  Keyboard,
-  Mic,
-  Play,
-  RefreshCw,
-  Sparkles,
-  X,
-} from "lucide-react"
 import { toast } from "sonner"
 
+import { AdaptiveComposer } from "@/components/adaptive-composer"
 import { GlassPanel } from "@/components/glass-panel"
-import {
-  SlidingTabs,
-  SlidingTabsBar,
-  type SlidingTabItem,
-} from "@/components/sliding-tabs"
+import { TranslationResultCard } from "@/components/translation-result-card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { VoiceNoteRecorder } from "@/components/voice-note-recorder"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
 import {
-  SAMPLE_PHRASES,
-  FEMALE_SAMPLE_PHRASES,
-  RISK_LABELS,
-} from "@/lib/translations"
+  extractPhraseHeuristic,
+  resolvePipelineMode,
+} from "@/lib/input-classifier"
+import { deescalateRant } from "@/lib/rant"
+import { SAMPLE_PHRASES } from "@/lib/translations"
+import { genderToDirection } from "@/lib/translate-prompts"
 import {
   getRandomLoadingMessage,
   getRandomFemaleLoadingMessage,
@@ -46,7 +29,6 @@ import {
   type TranslationResult,
   type TranslatorGender,
 } from "@/lib/translator"
-import { getSecureMicUrl } from "@/lib/audio-capture-support"
 import { cn } from "@/lib/utils"
 
 const GENDER_CONFIG = {
@@ -55,10 +37,8 @@ const GENDER_CONFIG = {
     tagline: "His short texts, translated into cosy horoscope energy",
     subjectLabel: "He said",
     resultLabel: "For you (her read)",
-    typeLabel: "Type what he said",
-    typePlaceholder: `e.g. "ok", "sorry", "I'm busy"`,
-    recordPrompt: "Record what he actually said",
-    idleHint: "Comedy-first decode. Pause before the cathedral of meaning.",
+    typeLabel: "Paste what he said — or rant, we'll find the phrase",
+    typePlaceholder: `e.g. "k", "I'm almost there", or a longer vent…`,
     emptyToastTitle: "He said nothing. Tiny omen: silence.",
     transcribeLoading: "Reading the soft weather…",
     transcribeError: "Could not read that omen.",
@@ -69,14 +49,12 @@ const GENDER_CONFIG = {
     tagline: "Her subtext, translated into quest markers and bro tips",
     subjectLabel: "She said",
     resultLabel: "For you (his read)",
-    typeLabel: "Type what she said",
-    typePlaceholder: `e.g. "I'm fine", "Nothing", "You should know"`,
-    recordPrompt: "Record what she said",
-    idleHint: "Joke first. Lowest-risk reply second. No therapy mode.",
+    typeLabel: "Paste what she said — or rant, we'll find the phrase",
+    typePlaceholder: `e.g. "I'm fine", "Do whatever you want", or a longer vent…`,
     emptyToastTitle: "She said nothing. Suspicious side quest?",
     transcribeLoading: "Scanning for quest markers…",
     transcribeError: "Could not decode that quest.",
-    samplePhrases: FEMALE_SAMPLE_PHRASES,
+    samplePhrases: SAMPLE_PHRASES,
   },
 } as const
 
@@ -88,20 +66,14 @@ type MaleTranslatorProps = {
   translationDelayMs: number
 }
 
-type ViewMode = "voice" | "type" | "screenshot"
-
-const INPUT_MODE_TABS: SlidingTabItem[] = [
-  { value: "voice", label: "Voice", icon: Mic },
-  { value: "type", label: "Type", icon: Keyboard },
-  { value: "screenshot", label: "Screenshot", icon: ImageUp },
-]
-
 type BackgroundBlob = {
   className: string
   colorClass: string
   drift: { x: number[]; y: number[] }
   cycleDuration: number
 }
+
+type InputSource = "typed" | "voice" | "mixed"
 
 // Male: deep slow drift (~1.6–3.3 breaths/min). Female: calm but slightly livelier (~2.5–5 breaths/min).
 const MALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
@@ -230,6 +202,49 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
   )
 }
 
+const buildLocalResult = (
+  text: string,
+  gender: TranslatorGender,
+  sarcasmLevel: number,
+  gruntMode: boolean
+): TranslationResult => {
+  const mode = resolvePipelineMode(text)
+  const direction = genderToDirection(gender)
+  const phrase =
+    mode === "long_context_translation" ? extractPhraseHeuristic(text) : text
+
+  const baseline =
+    gender === "female"
+      ? translateFemale(phrase, { sarcasmLevel, gruntMode })
+      : translateMale(phrase, { sarcasmLevel, gruntMode })
+
+  if (mode === "short_translation") {
+    return {
+      ...baseline,
+      mode,
+      input: text,
+    }
+  }
+
+  const rant = deescalateRant({
+    vent: text,
+    originalMessage: phrase,
+    direction,
+  })
+
+  return {
+    ...baseline,
+    mode,
+    input: text,
+    extractedPhrase: phrase,
+    analysis: {
+      whyThisPhrase: rant.whatHappened,
+      contextSignals: rant.likelyNonSeriousExplanations.slice(0, 3),
+      whatUserBrainAdded: [rant.whatYourBrainAdded],
+    },
+  }
+}
+
 export function MaleTranslator({
   appName: appNameProp,
   tagline: taglineProp,
@@ -243,8 +258,8 @@ export function MaleTranslator({
     gender === "male" && appNameProp ? appNameProp : genderConfig.appName
   void taglineProp
 
-  const [viewMode, setViewMode] = useState<ViewMode>("voice")
   const [input, setInput] = useState("")
+  const [inputSource, setInputSource] = useState<InputSource>("typed")
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
   const [isFetchingAiInsight, setIsFetchingAiInsight] = useState(false)
@@ -257,8 +272,8 @@ export function MaleTranslator({
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const speechUrlRef = useRef<string | null>(null)
-  const screenshotInputRef = useRef<HTMLInputElement | null>(null)
   const screenshotUrlRef = useRef<string | null>(null)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     return () => {
@@ -268,15 +283,36 @@ export function MaleTranslator({
     }
   }, [])
 
+  const clearScreenshot = useCallback(() => {
+    if (screenshotUrlRef.current) {
+      URL.revokeObjectURL(screenshotUrlRef.current)
+      screenshotUrlRef.current = null
+    }
+
+    setScreenshotFile(null)
+    setScreenshotPreviewUrl(null)
+  }, [])
+
   const translate = useCallback(
-    async (text: string) => {
-      if (!text.trim()) {
+    async (
+      text: string,
+      options?: {
+        source?: InputSource
+        imageFile?: File | null
+      }
+    ) => {
+      const source = options?.source ?? inputSource
+      const imageFile = options?.imageFile ?? screenshotFile
+      const trimmed = text.trim()
+
+      if (!trimmed && !imageFile) {
         toast.error(genderConfig.emptyToastTitle, {
-          description: "Record a voice note or type something first.",
+          description: "Type something, attach a screenshot, or use voice.",
         })
         return
       }
 
+      const requestId = ++requestIdRef.current
       setIsTranslating(true)
       setIsFetchingAiInsight(false)
       setLoadingMessage(
@@ -286,14 +322,66 @@ export function MaleTranslator({
       )
       setResult(null)
 
+      const direction = genderToDirection(gender)
+
+      // Image-only (or image + text) needs the server for vision context.
+      if (imageFile) {
+        try {
+          const formData = new FormData()
+          if (trimmed) formData.append("text", trimmed)
+          formData.append("image", imageFile)
+          formData.append("direction", direction)
+          formData.append("inputSource", trimmed ? "mixed" : source)
+          formData.append("sarcasmLevel", String(sarcasmLevel))
+          formData.append("gruntMode", String(gruntMode))
+
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            body: formData,
+            signal: AbortSignal.timeout(45_000),
+          })
+          const data = (await response.json()) as TranslationResult & {
+            error?: string
+          }
+
+          if (!response.ok) {
+            throw new Error(data.error ?? "Translation failed.")
+          }
+
+          if (requestId !== requestIdRef.current) return
+
+          if (data.extractedPhrase) {
+            setInput(data.extractedPhrase)
+          } else if (data.input) {
+            setInput(data.input)
+          }
+
+          setResult(data)
+        } catch (error) {
+          if (requestId !== requestIdRef.current) return
+          const message =
+            error instanceof Error ? error.message : "Translation failed."
+          toast.error("Could not translate that.", { description: message })
+        } finally {
+          if (requestId === requestIdRef.current) {
+            setIsTranslating(false)
+            setIsFetchingAiInsight(false)
+          }
+        }
+        return
+      }
+
       await new Promise((resolve) => setTimeout(resolve, translationDelayMs))
 
-      const dictionaryTranslation =
-        gender === "female"
-          ? translateFemale(text, { sarcasmLevel, gruntMode })
-          : translateMale(text, { sarcasmLevel, gruntMode })
+      if (requestId !== requestIdRef.current) return
 
-      setResult(dictionaryTranslation)
+      const localResult = buildLocalResult(
+        trimmed,
+        gender,
+        sarcasmLevel,
+        gruntMode
+      )
+      setResult(localResult)
       setIsTranslating(false)
       setIsFetchingAiInsight(true)
 
@@ -302,12 +390,13 @@ export function MaleTranslator({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            input: text,
-            gender,
+            text: trimmed,
+            direction,
+            inputSource: source,
             sarcasmLevel,
             gruntMode,
           }),
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(25_000),
         })
 
         if (!response.ok) {
@@ -316,31 +405,37 @@ export function MaleTranslator({
 
         const enhanced = (await response.json()) as TranslationResult
 
-        setResult((current) => {
-          if (!current || current.input !== text) {
-            return current
-          }
+        if (requestId !== requestIdRef.current) return
 
-          if (!enhanced.aiInsight) {
+        setResult((current) => {
+          if (!current || current.input !== trimmed) {
             return current
           }
 
           return {
             ...current,
-            aiInsight: enhanced.aiInsight,
+            ...enhanced,
+            // Keep local comic card if server somehow omitted fields
+            comicTranslation:
+              enhanced.comicTranslation || current.comicTranslation,
+            translation: enhanced.translation || current.translation,
           }
         })
       } catch {
-        // Dictionary reply is already visible.
+        // Dictionary / local reply is already visible.
       } finally {
-        setIsFetchingAiInsight(false)
+        if (requestId === requestIdRef.current) {
+          setIsFetchingAiInsight(false)
+        }
       }
     },
     [
       gender,
       genderConfig.emptyToastTitle,
       gruntMode,
+      inputSource,
       sarcasmLevel,
+      screenshotFile,
       translationDelayMs,
     ]
   )
@@ -372,9 +467,12 @@ export function MaleTranslator({
       }
 
       setInput(data.text)
-      await translate(data.text)
+      setInputSource(screenshotFile ? "mixed" : "voice")
+      await translate(data.text, {
+        source: screenshotFile ? "mixed" : "voice",
+      })
     },
-    [translate]
+    [screenshotFile, translate]
   )
 
   const handleRecordingComplete = useCallback(
@@ -418,7 +516,6 @@ export function MaleTranslator({
     if (recorderStatus === "processing" || isTranslating) return
 
     try {
-      setInput("")
       setResult(null)
       await startRecording()
     } catch {
@@ -431,31 +528,7 @@ export function MaleTranslator({
     }
   }
 
-  const handleSubmit = () => translate(input)
-
-  const handleSample = (phrase: string) => {
-    setViewMode("type")
-    setInput(phrase)
-    void translate(phrase)
-  }
-
-  const clearScreenshot = useCallback(() => {
-    if (screenshotUrlRef.current) {
-      URL.revokeObjectURL(screenshotUrlRef.current)
-      screenshotUrlRef.current = null
-    }
-
-    if (screenshotInputRef.current) {
-      screenshotInputRef.current.value = ""
-    }
-
-    setScreenshotFile(null)
-    setScreenshotPreviewUrl(null)
-  }, [])
-
-  const handleScreenshotChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-
+  const handleScreenshotChange = (file: File | null) => {
     if (!file) return
 
     const isSupportedType = ["image/jpeg", "image/png", "image/webp"].includes(
@@ -463,7 +536,6 @@ export function MaleTranslator({
     )
 
     if (!isSupportedType || file.size > 10 * 1024 * 1024) {
-      event.target.value = ""
       toast.error("Choose a PNG, JPEG, or WebP screenshot up to 10 MB.")
       return
     }
@@ -473,48 +545,21 @@ export function MaleTranslator({
     screenshotUrlRef.current = previewUrl
     setScreenshotFile(file)
     setScreenshotPreviewUrl(previewUrl)
+    setInputSource(input.trim() ? "mixed" : "typed")
     setResult(null)
   }
 
-  const handleAnalyzeScreenshot = async () => {
-    if (!screenshotFile) {
-      toast.error("Choose a conversation screenshot first.")
-      return
-    }
+  const handleSubmit = () => {
+    void translate(input, {
+      source: screenshotFile ? "mixed" : inputSource,
+      imageFile: screenshotFile,
+    })
+  }
 
-    setIsTranslating(true)
-    setLoadingMessage("Reading both sides of the conversation…")
-    setResult(null)
-
-    try {
-      const formData = new FormData()
-      formData.append("screenshot", screenshotFile)
-      formData.append("gender", gender)
-      formData.append("sarcasmLevel", String(sarcasmLevel))
-      formData.append("gruntMode", String(gruntMode))
-
-      const response = await fetch("/api/analyze-screenshot", {
-        method: "POST",
-        body: formData,
-        signal: AbortSignal.timeout(45_000),
-      })
-      const data = (await response.json()) as TranslationResult & {
-        error?: string
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Screenshot analysis failed.")
-      }
-
-      setInput(data.input)
-      setResult(data)
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Screenshot analysis failed."
-      toast.error("Could not read that screenshot.", { description: message })
-    } finally {
-      setIsTranslating(false)
-    }
+  const handleSample = (phrase: string) => {
+    setInput(phrase)
+    setInputSource("typed")
+    void translate(phrase, { source: "typed", imageFile: null })
   }
 
   const stopSpeechPlayback = useCallback(() => {
@@ -581,7 +626,10 @@ export function MaleTranslator({
       `Risk: ${result.riskLevel}`,
       `Lowest-risk reply: ${result.lowestRiskReply}`,
       `Nudge: ${result.tinyWholesomeNudge}`,
-    ].join("\n")
+      result.aiInsight ? `Footnote: ${result.aiInsight}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n")
     await navigator.clipboard.writeText(block)
     toast.success("Copied!")
   }
@@ -591,19 +639,20 @@ export function MaleTranslator({
     stopSpeechPlayback()
     setGender(nextGender)
     setInput("")
+    setInputSource("typed")
     setResult(null)
     setIsFetchingAiInsight(false)
     clearScreenshot()
   }
 
-  // const sarcasmLabel =
-  //   sarcasmLevel <= 3
-  //     ? "Gentle"
-  //     : sarcasmLevel <= 6
-  //       ? "Honest"
-  //       : sarcasmLevel <= 8
-  //         ? "Spicy"
-  //         : "Nuclear"
+  const handleReset = () => {
+    stopSpeechPlayback()
+    setResult(null)
+    setIsFetchingAiInsight(false)
+    setInput("")
+    setInputSource("typed")
+    clearScreenshot()
+  }
 
   const isRecorderBusy =
     recorderStatus === "recording" || recorderStatus === "processing"
@@ -617,12 +666,12 @@ export function MaleTranslator({
         <header className="shrink-0 space-y-5 pt-4 text-center sm:pt-10">
           <div className="absolute top-0 right-0 flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
-              I&apos;m into
+              Translating for
             </span>
             <div
               className="sliding-pill sliding-pill--glass relative flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
               role="tablist"
-              aria-label="Who I am into"
+              aria-label="Translation target receiver"
             >
               {(["male", "female"] as const).map((mode) => (
                 <button
@@ -646,15 +695,9 @@ export function MaleTranslator({
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               {appName}
             </h1>
-            {/* <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
-              {tagline}
-            </p> */}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {/* <Badge className="rounded-full border-white/12 bg-white/[0.08] text-white/75 shadow-sm backdrop-blur-xl hover:bg-white/[0.08]">
-              Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
-            </Badge> */}
             {gruntMode && (
               <Badge
                 variant="outline"
@@ -666,367 +709,74 @@ export function MaleTranslator({
           </div>
         </header>
 
-        <div className="mt-6 shrink-0">
-          <SlidingTabs
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as ViewMode)}
-            className="gap-0"
-          >
-            <SlidingTabsBar
-              items={INPUT_MODE_TABS}
-              variant="glass"
-              disabled={isRecorderBusy}
-              aria-label="Input method"
-            />
-          </SlidingTabs>
-        </div>
-
         <div className="mt-6 flex flex-col gap-6">
-          <GlassPanel variant="strong" className="min-h-[28rem] overflow-hidden">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={viewMode}
-                role="tabpanel"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-            >
-              {viewMode === "voice" ? (
-                <div>
-                  {isMicSupported ? (
-                    <VoiceNoteRecorder
-                      status={recorderStatus}
-                      durationMs={durationMs}
-                      waveformHistory={waveformHistory}
-                      liveLevels={liveLevels}
-                      transcript={input}
-                      recordPrompt={genderConfig.recordPrompt}
-                      idleHint={genderConfig.idleHint}
-                      disabled={isBusy && recorderStatus !== "recording"}
-                      onToggleRecording={() => void handleToggleRecording()}
-                    />
-                  ) : (
-                    <div className="space-y-4 px-5 py-10 text-center">
-                      {micUnsupportedReason === "insecure-context" ? (
-                        <>
-                          <p className="text-sm font-medium text-foreground/85">
-                            Microphone access needs HTTPS
-                          </p>
-                          <p className="mx-auto max-w-xs text-xs leading-relaxed text-muted-foreground">
-                            iOS blocks the mic on plain HTTP LAN URLs. On your
-                            Mac, run{" "}
-                            <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80">
-                              pnpm dev:lan
-                            </code>
-                            , then open{" "}
-                            <span className="font-medium text-foreground/80">
-                              {getSecureMicUrl()}
-                            </span>{" "}
-                            on your phone and allow the certificate warning.
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Voice notes need a mic-friendly browser. Try Safari on
-                          iOS 14.3+ or switch to typing.
-                        </p>
-                      )}
-                      <Button
-                        size="sm"
-                        className="mt-2 rounded-full"
-                        onClick={() => setViewMode("type")}
-                      >
-                        Switch to typing
-                      </Button>
-                    </div>
-                  )}
-
-                  {input.trim() &&
-                    recorderStatus === "idle" &&
-                    !isTranslating && (
-                      <div className="border-t border-border/60 p-5">
-                        <Button
-                          onClick={handleSubmit}
-                          disabled={isBusy}
-                          className="h-12 w-full rounded-full"
-                          size="lg"
-                        >
-                          <Sparkles aria-hidden />
-                          Translate
-                          <ArrowRight aria-hidden />
-                        </Button>
-                      </div>
-                    )}
-                </div>
-              ) : viewMode === "type" ? (
-                <div className="space-y-4 p-5">
-                  <p className="text-sm font-medium text-foreground/80">
-                    {genderConfig.typeLabel}
-                  </p>
-
-                  <Textarea
-                    aria-label={genderConfig.typeLabel}
-                    placeholder={genderConfig.typePlaceholder}
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" &&
-                        (event.metaKey || event.ctrlKey)
-                      ) {
-                        event.preventDefault()
-                        handleSubmit()
-                      }
-                    }}
-                    rows={4}
-                    className="min-h-32 resize-none rounded-2xl border-white/12 bg-white/[0.06] text-foreground placeholder:text-muted-foreground/65 focus-visible:border-white/25 focus-visible:ring-white/10"
-                    disabled={isBusy}
-                  />
-
-                  <div className="flex flex-wrap gap-2">
-                    {genderConfig.samplePhrases.map((phrase) => (
-                      <Button
-                        key={phrase}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full border-white/12 bg-white/[0.06] text-white/70 hover:bg-white/12 hover:text-white"
-                        onClick={() => handleSample(phrase)}
-                        disabled={isBusy}
-                      >
-                        &ldquo;{phrase}&rdquo;
-                      </Button>
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isBusy}
-                    className="h-11 w-full rounded-full"
-                  >
-                    <Sparkles aria-hidden />
-                    Translate
-                    <ArrowRight aria-hidden />
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-5 p-5">
-                  <div>
-                    <p className="text-sm font-medium text-foreground/80">
-                      Upload a two-sided conversation
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      We&apos;ll separate your messages from theirs, then run
-                      the same dictionary-first analysis.
-                    </p>
-                  </div>
-
-                  {screenshotPreviewUrl ? (
-                    <div className="relative overflow-hidden rounded-2xl border border-white/12 bg-black/20">
-                      <Image
-                        src={screenshotPreviewUrl}
-                        alt="Selected conversation screenshot"
-                        width={900}
-                        height={1600}
-                        unoptimized
-                        className="max-h-80 w-full object-contain"
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="icon-sm"
-                        className="absolute top-2 right-2 rounded-full bg-black/55 text-white hover:bg-black/70"
-                        onClick={clearScreenshot}
-                        disabled={isBusy}
-                        aria-label="Remove screenshot"
-                      >
-                        <X aria-hidden />
-                      </Button>
-                    </div>
-                  ) : (
-                    <label
-                      htmlFor="conversation-screenshot"
-                      className="flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/[0.05] px-6 text-center transition-colors focus-within:border-white/30 focus-within:ring-2 focus-within:ring-white/15 hover:border-white/30 hover:bg-white/[0.08]"
-                    >
-                      <span className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white/80">
-                        <ImageUp className="size-5" aria-hidden />
-                      </span>
-                      <span className="mt-4 text-sm font-medium text-white/85">
-                        Choose screenshot
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        PNG, JPEG, or WebP · 10 MB max
-                      </span>
-                    </label>
-                  )}
-
-                  <input
-                    ref={screenshotInputRef}
-                    id="conversation-screenshot"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    onChange={handleScreenshotChange}
-                    disabled={isBusy}
-                  />
-
-                  <Button
-                    onClick={() => void handleAnalyzeScreenshot()}
-                    disabled={isBusy || !screenshotFile}
-                    className="h-11 w-full rounded-full"
-                  >
-                    <Sparkles aria-hidden />
-                    Analyze conversation
-                    <ArrowRight aria-hidden />
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-          </GlassPanel>
+          <AdaptiveComposer
+            value={input}
+            onChange={(next) => {
+              setInput(next)
+              setInputSource(screenshotFile ? "mixed" : "typed")
+            }}
+            placeholder={genderConfig.typePlaceholder}
+            ariaLabel={genderConfig.typeLabel}
+            phrases={genderConfig.samplePhrases}
+            disabled={isBusy}
+            isSubmitting={isTranslating}
+            screenshotPreviewUrl={screenshotPreviewUrl}
+            screenshotFileName={screenshotFile?.name}
+            onScreenshotChange={handleScreenshotChange}
+            onRemoveScreenshot={clearScreenshot}
+            recorderStatus={recorderStatus}
+            durationMs={durationMs}
+            waveformHistory={waveformHistory}
+            liveLevels={liveLevels}
+            isMicSupported={isMicSupported}
+            micUnsupportedReason={micUnsupportedReason}
+            onToggleRecording={() => void handleToggleRecording()}
+            onSelectPreset={handleSample}
+            onSubmit={handleSubmit}
+          />
 
           <AnimatePresence mode="wait">
-          {(isTranslating || recorderStatus === "processing") && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-            >
-              <GlassPanel variant="subtle" className="px-4 py-8 text-center">
-                <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
-                <p className="text-sm text-muted-foreground">
-                  {loadingMessage}
-                </p>
-              </GlassPanel>
-            </motion.div>
-          )}
-
-          {result && !isTranslating && recorderStatus !== "processing" && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              <div className="flex justify-start">
-                <div className="max-w-[88%] rounded-3xl rounded-bl-md border border-white/12 bg-white/[0.08] px-4 py-3 text-sm text-foreground/80 shadow-sm backdrop-blur-xl">
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                    {genderConfig.subjectLabel}
+            {(isTranslating || recorderStatus === "processing") && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+              >
+                <GlassPanel variant="subtle" className="px-4 py-8 text-center">
+                  <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
+                  <p className="text-sm text-muted-foreground">
+                    {loadingMessage}
                   </p>
-                  <p className="mt-1 text-foreground/90">
-                    &ldquo;{result.input}&rdquo;
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <GlassPanel
-                  variant="strong"
-                  className="max-w-[88%] rounded-3xl rounded-br-md px-4 py-4 text-sm"
-                >
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                      {genderConfig.resultLabel}
-                    </p>
-                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
-                      {RISK_LABELS[result.riskLevel]}
-                    </Badge>
-                  </div>
-
-                  <p className="text-sm font-semibold text-foreground">
-                    {result.headline}
-                  </p>
-                  <p className="mt-2 text-base leading-relaxed font-medium text-foreground">
-                    &ldquo;{result.comicTranslation}&rdquo;
-                  </p>
-
-                  <div className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm leading-relaxed text-foreground/80">
-                    <p>
-                      <span className="font-medium text-foreground/90">
-                        Today&apos;s theory:{" "}
-                      </span>
-                      {result.possibleActualMeaning}
-                    </p>
-                    <p>
-                      <span className="font-medium text-foreground/90">
-                        Lowest-risk reply:{" "}
-                      </span>
-                      {result.lowestRiskReply}
-                    </p>
-                    <p className="text-foreground/70">
-                      {result.tinyWholesomeNudge}
-                    </p>
-                  </div>
-
-                  {result.aiInsight && (
-                    <div className="mt-3 border-t border-white/10 pt-3">
-                      <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                        <Sparkles className="size-3" aria-hidden />
-                        Extra footnote
-                      </p>
-                      <p className="text-sm leading-relaxed text-foreground/80">
-                        {result.aiInsight}
-                      </p>
-                    </div>
-                  )}
-
-                  {isFetchingAiInsight && !result.aiInsight && (
-                    <div className="mt-3 border-t border-white/10 pt-3">
-                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <RefreshCw className="size-3.5 animate-spin" aria-hidden />
-                        Adding a tiny footnote…
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      className="h-8 rounded-full"
-                      onClick={handleSpeakTranslation}
-                      disabled={isSpeaking}
-                    >
-                      {isSpeaking ? (
-                        <RefreshCw className="animate-spin" aria-hidden />
-                      ) : (
-                        <Play aria-hidden />
-                      )}
-                      Play
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="h-8 rounded-full"
-                      onClick={copyResult}
-                    >
-                      <Copy aria-hidden />
-                      Copy
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 rounded-full text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        stopSpeechPlayback()
-                        setResult(null)
-                        setIsFetchingAiInsight(false)
-                        setInput("")
-                        clearScreenshot()
-                      }}
-                    >
-                      New
-                    </Button>
-                  </div>
                 </GlassPanel>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+
+            {result && !isTranslating && recorderStatus !== "processing" && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <TranslationResultCard
+                  result={result}
+                  subjectLabel={genderConfig.subjectLabel}
+                  resultLabel={genderConfig.resultLabel}
+                  isFetchingAnalysis={isFetchingAiInsight}
+                  isSpeaking={isSpeaking}
+                  onSpeak={() => void handleSpeakTranslation()}
+                  onCopy={() => void copyResult()}
+                  onReset={handleReset}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <footer className="text-center text-[11px] text-muted-foreground/80">
-            Voice notes stay on your device until transcribed.
+            Text, voice, or screenshot — one translator. Voice stays on-device
+            until transcribed.
           </footer>
         </div>
       </div>

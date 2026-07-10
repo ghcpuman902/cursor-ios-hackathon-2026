@@ -18,25 +18,19 @@ export { FEMALE_TRANSLATIONS } from "@/lib/translations-female"
 
 import type { TranslationEntry } from "@/lib/translation-types"
 
+/** Shared adaptive-composer presets (both directions). */
 export const SAMPLE_PHRASES = [
-  "ok",
-  "sorry",
-  "I'm busy",
-  "What do you want me to do?",
+  "k",
+  "I'm fine",
+  "Do whatever you want",
   "I'm almost there",
   "Trust me",
+  "You should've reminded me",
   "It's not that deep",
+  "Family stuff",
 ] as const
 
-export const FEMALE_SAMPLE_PHRASES = [
-  "I'm fine",
-  "Nothing",
-  "You should know",
-  "Whatever",
-  "We need to talk",
-  "Equal effort",
-  "Don't flake",
-] as const
+export const FEMALE_SAMPLE_PHRASES = SAMPLE_PHRASES
 
 export const LOADING_MESSAGES = [
   "Consulting the cosy horoscope…",
