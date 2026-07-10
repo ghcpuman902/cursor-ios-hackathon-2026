@@ -139,7 +139,7 @@ const readJsonSafely = async <T>(response: Response): Promise<T | null> => {
 }
 
 
-export const revalidate = CACHE_SECONDS
+export const revalidate = 3600
 
 export async function GET() {
   const [relationshipResponse, classicResponse] = await Promise.allSettled([
