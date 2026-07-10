@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="relative min-h-dvh px-4 py-6 sm:py-12">
+    <main className="mobile-app-shell app-shell-bg relative min-h-0 flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <MaleTranslator
         appName={env.NEXT_PUBLIC_APP_NAME}
         tagline={env.NEXT_PUBLIC_APP_TAGLINE}

@@ -1,6 +1,7 @@
 import { APICallError, NoTranscriptGeneratedError } from "ai"
 import { NextResponse } from "next/server"
 
+import { enforceRateLimit } from "@/lib/server/rate-limit"
 import { isAudioConfigured } from "@/lib/server-env"
 import { transcribeAudioBuffer } from "@/lib/transcribe-audio"
 
@@ -37,6 +38,16 @@ const getTranscriptionErrorMessage = (error: unknown) => {
 }
 
 export async function POST(request: Request) {
+  const rateLimited = await enforceRateLimit(request, {
+    routeName: "transcribe",
+    limit: 20,
+    windowSeconds: 60,
+  })
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   if (!isAudioConfigured()) {
     return NextResponse.json(
       {

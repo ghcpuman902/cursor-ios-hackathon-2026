@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getSpeechModel } from "@/lib/ai"
+import { enforceRateLimit } from "@/lib/server/rate-limit"
 import { getServerEnv, isAudioConfigured } from "@/lib/server-env"
 
 export const runtime = "nodejs"
@@ -13,6 +14,16 @@ const speechRequestSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const rateLimited = await enforceRateLimit(request, {
+    routeName: "speech",
+    limit: 20,
+    windowSeconds: 60,
+  })
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   if (!isAudioConfigured()) {
     return NextResponse.json(
       {

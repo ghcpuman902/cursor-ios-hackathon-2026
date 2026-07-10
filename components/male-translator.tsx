@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   useCallback,
   useEffect,
@@ -7,19 +8,26 @@ import {
   useState,
 } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import { MessageSquarePlus } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdaptiveComposer } from "@/components/adaptive-composer"
-import { GlassPanel } from "@/components/glass-panel"
-import { TranslationResultCard } from "@/components/translation-result-card"
+import { ChatTranscript } from "@/components/chat-transcript"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
+import { usePersistedChatHistory } from "@/hooks/use-persisted-chat-history"
+import {
+  createPendingTurn,
+  hasConversation,
+  type InputSource,
+} from "@/lib/chat-history"
 import {
   extractPhraseHeuristic,
   resolvePipelineMode,
 } from "@/lib/input-classifier"
 import { deescalateRant } from "@/lib/rant"
-import { SAMPLE_PHRASES } from "@/lib/translations"
+import { FEMALE_SAMPLE_PHRASES, MALE_SAMPLE_PHRASES } from "@/lib/translations"
 import {
   buildLocalSupportingFootnote,
   genderToDirection,
@@ -36,7 +44,7 @@ import { cn } from "@/lib/utils"
 
 const GENDER_CONFIG = {
   male: {
-    appName: "Male → Female",
+    appName: "Male Translator™",
     tagline: "His short texts, translated into cosy horoscope energy",
     subjectLabel: "He said",
     resultLabel: "For you (her read)",
@@ -45,10 +53,10 @@ const GENDER_CONFIG = {
     emptyToastTitle: "He said nothing. Tiny omen: silence.",
     transcribeLoading: "Reading the soft weather…",
     transcribeError: "Could not read that omen.",
-    samplePhrases: SAMPLE_PHRASES,
+    samplePhrases: MALE_SAMPLE_PHRASES,
   },
   female: {
-    appName: "Female → Male",
+    appName: "Female Translator™",
     tagline: "Her subtext, translated into quest markers and bro tips",
     subjectLabel: "She said",
     resultLabel: "For you (his read)",
@@ -57,7 +65,7 @@ const GENDER_CONFIG = {
     emptyToastTitle: "She said nothing. Suspicious side quest?",
     transcribeLoading: "Scanning for quest markers…",
     transcribeError: "Could not decode that quest.",
-    samplePhrases: SAMPLE_PHRASES,
+    samplePhrases: FEMALE_SAMPLE_PHRASES,
   },
 } as const
 
@@ -76,44 +84,29 @@ type BackgroundBlob = {
   cycleDuration: number
 }
 
-type InputSource = "typed" | "voice" | "mixed"
-
-// Male: deep slow drift (~1.6–3.3 breaths/min). Female: calm but slightly livelier (~2.5–5 breaths/min).
 const MALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
   {
     className: "absolute -top-32 -left-28 size-[28rem]",
     colorClass: "gender-blob-male-blue",
-    drift: {
-      x: [0, 28, 10, -18, 0],
-      y: [0, 18, 34, 12, 0],
-    },
+    drift: { x: [0, 28, 10, -18, 0], y: [0, 18, 34, 12, 0] },
     cycleDuration: 18,
   },
   {
     className: "absolute top-[22%] -right-36 size-[32rem]",
     colorClass: "gender-blob-male-cyan",
-    drift: {
-      x: [0, -34, 8, 16, 0],
-      y: [0, 24, -14, 8, 0],
-    },
+    drift: { x: [0, -34, 8, 16, 0], y: [0, 24, -14, 8, 0] },
     cycleDuration: 24,
   },
   {
     className: "absolute -bottom-44 left-[12%] size-[34rem]",
     colorClass: "gender-blob-male-indigo",
-    drift: {
-      x: [0, 36, -12, -24, 0],
-      y: [0, -20, 8, 16, 0],
-    },
+    drift: { x: [0, 36, -12, -24, 0], y: [0, -20, 8, 16, 0] },
     cycleDuration: 30,
   },
   {
     className: "absolute top-[58%] right-[8%] size-56",
     colorClass: "gender-blob-male-red",
-    drift: {
-      x: [0, -14, 12, -6, 0],
-      y: [0, -10, 14, 4, 0],
-    },
+    drift: { x: [0, -14, 12, -6, 0], y: [0, -10, 14, 4, 0] },
     cycleDuration: 38,
   },
 ]
@@ -122,37 +115,25 @@ const FEMALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
   {
     className: "absolute -top-28 -left-24 size-[30rem]",
     colorClass: "gender-blob-female-soft-pink",
-    drift: {
-      x: [0, 32, 8, -22, 0],
-      y: [0, 20, 38, 12, 0],
-    },
+    drift: { x: [0, 32, 8, -22, 0], y: [0, 20, 38, 12, 0] },
     cycleDuration: 12,
   },
   {
     className: "absolute top-[26%] -right-32 size-[30rem]",
     colorClass: "gender-blob-female-fuchsia",
-    drift: {
-      x: [0, -40, 10, 22, 0],
-      y: [0, 28, -16, 8, 0],
-    },
+    drift: { x: [0, -40, 10, 22, 0], y: [0, 28, -16, 8, 0] },
     cycleDuration: 15,
   },
   {
     className: "absolute -bottom-40 left-[20%] size-[32rem]",
     colorClass: "gender-blob-female-hot-pink",
-    drift: {
-      x: [0, 42, -18, -26, 0],
-      y: [0, -22, 8, 16, 0],
-    },
+    drift: { x: [0, 42, -18, -26, 0], y: [0, -22, 8, 16, 0] },
     cycleDuration: 19,
   },
   {
     className: "absolute top-[12%] left-[42%] size-48",
     colorClass: "gender-blob-female-magenta",
-    drift: {
-      x: [0, 16, -18, 4, 0],
-      y: [0, 12, -10, 6, 0],
-    },
+    drift: { x: [0, 16, -18, 4, 0], y: [0, 12, -10, 6, 0] },
     cycleDuration: 24,
   },
 ]
@@ -187,10 +168,7 @@ function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
               animate={
                 reduceMotion
                   ? undefined
-                  : {
-                      x: blob.drift.x,
-                      y: blob.drift.y,
-                    }
+                  : { x: blob.drift.x, y: blob.drift.y }
               }
               transition={{
                 duration: blob.cycleDuration,
@@ -285,13 +263,18 @@ export function MaleTranslator({
     gender === "male" && appNameProp ? appNameProp : genderConfig.appName
   void taglineProp
 
+  const {
+    currentTurns,
+    isHydrated,
+    appendTurn,
+    updateTurn,
+    clearCurrentThread,
+  } = usePersistedChatHistory(gender)
+
   const [input, setInput] = useState("")
   const [inputSource, setInputSource] = useState<InputSource>("typed")
-  const [result, setResult] = useState<TranslationResult | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
-  const [isFetchingAiInsight, setIsFetchingAiInsight] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState("")
-  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<
     string | null
@@ -301,6 +284,9 @@ export function MaleTranslator({
   const speechUrlRef = useRef<string | null>(null)
   const screenshotUrlRef = useRef<string | null>(null)
   const requestIdRef = useRef(0)
+  const activeTurnIdRef = useRef<string | null>(null)
+
+  const conversationStarted = hasConversation(currentTurns)
 
   useEffect(() => {
     return () => {
@@ -320,8 +306,15 @@ export function MaleTranslator({
     setScreenshotPreviewUrl(null)
   }, [])
 
-  const translate = useCallback(
+  const cancelInFlightWork = useCallback(() => {
+    requestIdRef.current += 1
+    activeTurnIdRef.current = null
+    setIsTranslating(false)
+  }, [])
+
+  const translateForTurn = useCallback(
     async (
+      turnId: string,
       text: string,
       options?: {
         source?: InputSource
@@ -331,6 +324,7 @@ export function MaleTranslator({
       const source = options?.source ?? inputSource
       const imageFile = options?.imageFile ?? screenshotFile
       const trimmed = text.trim()
+      const requestGender = gender
 
       if (!trimmed && !imageFile) {
         toast.error(genderConfig.emptyToastTitle, {
@@ -340,18 +334,23 @@ export function MaleTranslator({
       }
 
       const requestId = ++requestIdRef.current
+      activeTurnIdRef.current = turnId
       setIsTranslating(true)
-      setIsFetchingAiInsight(false)
-      setLoadingMessage(
-        gender === "female"
+
+      const loadingMessage =
+        requestGender === "female"
           ? getRandomFemaleLoadingMessage()
           : getRandomLoadingMessage()
-      )
-      setResult(null)
 
-      const direction = genderToDirection(gender)
+      updateTurn(requestGender, turnId, (turn) => ({
+        ...turn,
+        status: "translating",
+        loadingMessage,
+        isFetchingAiInsight: false,
+      }))
 
-      // Image-only (or image + text) needs the server for vision context.
+      const direction = genderToDirection(requestGender)
+
       if (imageFile) {
         try {
           const formData = new FormData()
@@ -377,22 +376,30 @@ export function MaleTranslator({
 
           if (requestId !== requestIdRef.current) return
 
-          if (data.extractedPhrase) {
-            setInput(data.extractedPhrase)
-          } else if (data.input) {
-            setInput(data.input)
-          }
-
-          setResult(data)
+          updateTurn(requestGender, turnId, (turn) => ({
+            ...turn,
+            input: data.extractedPhrase ?? data.input ?? turn.input,
+            status: "complete",
+            result: data,
+            isFetchingAiInsight: false,
+            loadingMessage: undefined,
+          }))
         } catch (error) {
           if (requestId !== requestIdRef.current) return
           const message =
             error instanceof Error ? error.message : "Translation failed."
+          updateTurn(requestGender, turnId, (turn) => ({
+            ...turn,
+            status: "error",
+            errorMessage: message,
+            isFetchingAiInsight: false,
+            loadingMessage: undefined,
+          }))
           toast.error("Could not translate that.", { description: message })
         } finally {
           if (requestId === requestIdRef.current) {
             setIsTranslating(false)
-            setIsFetchingAiInsight(false)
+            activeTurnIdRef.current = null
           }
         }
         return
@@ -404,13 +411,19 @@ export function MaleTranslator({
 
       const localResult = buildLocalResult(
         trimmed,
-        gender,
+        requestGender,
         sarcasmLevel,
         gruntMode
       )
-      setResult(localResult)
+
+      updateTurn(requestGender, turnId, (turn) => ({
+        ...turn,
+        status: "complete",
+        result: localResult,
+        isFetchingAiInsight: true,
+        loadingMessage: undefined,
+      }))
       setIsTranslating(false)
-      setIsFetchingAiInsight(true)
 
       try {
         const response = await fetch("/api/translate", {
@@ -434,27 +447,36 @@ export function MaleTranslator({
 
         if (requestId !== requestIdRef.current) return
 
-        setResult((current) => {
-          if (!current || current.input !== trimmed) {
-            return current
+        updateTurn(requestGender, turnId, (turn) => {
+          if (!turn.result || turn.result.input !== trimmed) {
+            return turn
           }
 
-          // Dictionary card stays primary; AI only adds supporting fields.
           return {
-            ...current,
-            aiInsight: enhanced.aiInsight ?? current.aiInsight,
-            aiEnhancement: enhanced.aiEnhancement ?? current.aiEnhancement,
-            analysis: enhanced.analysis ?? current.analysis,
-            extractedPhrase:
-              enhanced.extractedPhrase ?? current.extractedPhrase,
-            mode: enhanced.mode ?? current.mode,
+            ...turn,
+            result: {
+              ...turn.result,
+              aiInsight: enhanced.aiInsight ?? turn.result.aiInsight,
+              aiEnhancement:
+                enhanced.aiEnhancement ?? turn.result.aiEnhancement,
+              analysis: enhanced.analysis ?? turn.result.analysis,
+              extractedPhrase:
+                enhanced.extractedPhrase ?? turn.result.extractedPhrase,
+              mode: enhanced.mode ?? turn.result.mode,
+            },
+            isFetchingAiInsight: false,
           }
         })
       } catch {
-        // Dictionary / local reply is already visible.
+        if (requestId === requestIdRef.current) {
+          updateTurn(requestGender, turnId, (turn) => ({
+            ...turn,
+            isFetchingAiInsight: false,
+          }))
+        }
       } finally {
         if (requestId === requestIdRef.current) {
-          setIsFetchingAiInsight(false)
+          activeTurnIdRef.current = null
         }
       }
     },
@@ -466,6 +488,49 @@ export function MaleTranslator({
       sarcasmLevel,
       screenshotFile,
       translationDelayMs,
+      updateTurn,
+    ]
+  )
+
+  const beginTranslation = useCallback(
+    (
+      text: string,
+      options?: {
+        source?: InputSource
+        imageFile?: File | null
+        clearComposer?: boolean
+      }
+    ) => {
+      const source = options?.source ?? inputSource
+      const imageFile = options?.imageFile ?? screenshotFile
+      const trimmed = text.trim()
+
+      if (!trimmed && !imageFile) {
+        toast.error(genderConfig.emptyToastTitle, {
+          description: "Type something, attach a screenshot, or use voice.",
+        })
+        return
+      }
+
+      const turn = createPendingTurn(trimmed || "Screenshot attached", source)
+      appendTurn(gender, turn)
+
+      if (options?.clearComposer !== false) {
+        setInput("")
+        setInputSource("typed")
+        clearScreenshot()
+      }
+
+      void translateForTurn(turn.id, trimmed, { source, imageFile })
+    },
+    [
+      appendTurn,
+      clearScreenshot,
+      gender,
+      genderConfig.emptyToastTitle,
+      inputSource,
+      screenshotFile,
+      translateForTurn,
     ]
   )
 
@@ -495,19 +560,18 @@ export function MaleTranslator({
         throw new Error("Could not detect speech in the recording.")
       }
 
-      setInput(data.text)
-      setInputSource(screenshotFile ? "mixed" : "voice")
-      await translate(data.text, {
+      beginTranslation(data.text, {
         source: screenshotFile ? "mixed" : "voice",
+        imageFile: screenshotFile,
+        clearComposer: true,
       })
     },
-    [screenshotFile, translate]
+    [beginTranslation, screenshotFile]
   )
 
   const handleRecordingComplete = useCallback(
     async (blob: Blob) => {
       try {
-        setLoadingMessage(genderConfig.transcribeLoading)
         await transcribeAudio(blob)
         toast.success("Voice note transcribed!")
       } catch (error) {
@@ -516,11 +580,7 @@ export function MaleTranslator({
         toast.error(genderConfig.transcribeError, { description: message })
       }
     },
-    [
-      genderConfig.transcribeError,
-      genderConfig.transcribeLoading,
-      transcribeAudio,
-    ]
+    [genderConfig.transcribeError, transcribeAudio]
   )
 
   const {
@@ -545,7 +605,6 @@ export function MaleTranslator({
     if (recorderStatus === "processing" || isTranslating) return
 
     try {
-      setResult(null)
       await startRecording()
     } catch {
       toast.error("Microphone access denied.", {
@@ -575,11 +634,10 @@ export function MaleTranslator({
     setScreenshotFile(file)
     setScreenshotPreviewUrl(previewUrl)
     setInputSource(input.trim() ? "mixed" : "typed")
-    setResult(null)
   }
 
   const handleSubmit = () => {
-    void translate(input, {
+    beginTranslation(input, {
       source: screenshotFile ? "mixed" : inputSource,
       imageFile: screenshotFile,
     })
@@ -588,7 +646,7 @@ export function MaleTranslator({
   const handleSample = (phrase: string) => {
     setInput(phrase)
     setInputSource("typed")
-    void translate(phrase, { source: "typed", imageFile: null })
+    beginTranslation(phrase, { source: "typed", imageFile: null })
   }
 
   const stopSpeechPlayback = useCallback(() => {
@@ -602,14 +660,17 @@ export function MaleTranslator({
       speechUrlRef.current = null
     }
 
-    setIsSpeaking(false)
+    setSpeakingTurnId(null)
   }, [])
 
-  const handleSpeakTranslation = async () => {
-    if (!result || isSpeaking) return
+  const handleSpeakTranslation = async (
+    turnId: string,
+    result: TranslationResult
+  ) => {
+    if (speakingTurnId === turnId) return
 
     stopSpeechPlayback()
-    setIsSpeaking(true)
+    setSpeakingTurnId(turnId)
 
     try {
       const response = await fetch("/api/speech", {
@@ -645,8 +706,7 @@ export function MaleTranslator({
     }
   }
 
-  const copyResult = async () => {
-    if (!result) return
+  const copyResult = async (result: TranslationResult) => {
     const block = [
       result.headline,
       result.comicTranslation,
@@ -666,18 +726,17 @@ export function MaleTranslator({
   const handleGenderChange = (nextGender: TranslatorGender) => {
     if (nextGender === gender) return
     stopSpeechPlayback()
+    cancelInFlightWork()
     setGender(nextGender)
     setInput("")
     setInputSource("typed")
-    setResult(null)
-    setIsFetchingAiInsight(false)
     clearScreenshot()
   }
 
-  const handleReset = () => {
+  const handleNewChat = () => {
     stopSpeechPlayback()
-    setResult(null)
-    setIsFetchingAiInsight(false)
+    cancelInFlightWork()
+    clearCurrentThread(gender)
     setInput("")
     setInputSource("typed")
     clearScreenshot()
@@ -691,122 +750,165 @@ export function MaleTranslator({
     <>
       <DynamicGenderBackground gender={gender} />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col">
-        <header className="shrink-0 space-y-5 pt-4 text-center sm:pt-10">
-          <div className="absolute top-0 right-0 flex items-center gap-2">
-            <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
-              Translating for
-            </span>
-            <div
-              className="sliding-pill sliding-pill--glass relative flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
-              role="tablist"
-              aria-label="Translation target receiver"
-            >
-              {(["male", "female"] as const).map((mode) => (
-                <button
-                  key={mode}
+      <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-md flex-col">
+        <header className="shrink-0 space-y-3 px-1 pt-2 text-center sm:pt-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-col items-start gap-1">
+              {conversationStarted && (
+                <Button
                   type="button"
-                  role="tab"
-                  data-slot="pill-trigger"
-                  data-active={gender === mode ? "" : undefined}
-                  aria-selected={gender === mode}
-                  onClick={() => handleGenderChange(mode)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 rounded-full px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleNewChat}
                   disabled={isBusy}
-                  className="relative z-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                  aria-label="Start a new chat"
                 >
-                  {mode === "male" ? "Him → You" : "Her → You"}
-                </button>
-              ))}
+                  <MessageSquarePlus className="size-3.5" aria-hidden />
+                  New chat
+                </Button>
+              )}
+            </div>
+
+            <div className="flex min-w-0 flex-col items-end gap-2">
+              <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
+                Translating for
+              </span>
+              <div
+                className="sliding-pill sliding-pill--glass relative flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
+                role="tablist"
+                aria-label="Translation target receiver"
+              >
+                {(["male", "female"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="tab"
+                    data-slot="pill-trigger"
+                    data-active={gender === mode ? "" : undefined}
+                    aria-selected={gender === mode}
+                    onClick={() => handleGenderChange(mode)}
+                    disabled={isBusy}
+                    className="relative z-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                  >
+                    {mode === "male" ? "Him → You" : "Her → You"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {appName}
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {gruntMode && (
+          {gruntMode && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Badge
                 variant="outline"
                 className="rounded-full border-white/12 bg-white/[0.06] text-white/60 backdrop-blur-xl"
               >
                 {gender === "male" ? "Extra sparkle" : "Spicy footnotes"}
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
         </header>
 
-        <div className="mt-6 flex flex-col gap-6">
-          <AdaptiveComposer
-            value={input}
-            onChange={(next) => {
-              setInput(next)
-              setInputSource(screenshotFile ? "mixed" : "typed")
-            }}
-            placeholder={genderConfig.typePlaceholder}
-            ariaLabel={genderConfig.typeLabel}
-            phrases={genderConfig.samplePhrases}
-            disabled={isBusy}
-            isSubmitting={isTranslating}
-            screenshotPreviewUrl={screenshotPreviewUrl}
-            screenshotFileName={screenshotFile?.name}
-            onScreenshotChange={handleScreenshotChange}
-            onRemoveScreenshot={clearScreenshot}
-            recorderStatus={recorderStatus}
-            durationMs={durationMs}
-            waveformHistory={waveformHistory}
-            liveLevels={liveLevels}
-            isMicSupported={isMicSupported}
-            micUnsupportedReason={micUnsupportedReason}
-            onToggleRecording={() => void handleToggleRecording()}
-            onSelectPreset={handleSample}
-            onSubmit={handleSubmit}
-          />
+        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
+          {isHydrated ? (
+            <ChatTranscript
+              turns={currentTurns}
+              resultLabel={genderConfig.resultLabel}
+              speakingTurnId={speakingTurnId}
+              onSpeak={(turnId, result) =>
+                void handleSpeakTranslation(turnId, result)
+              }
+              onCopy={(result) => void copyResult(result)}
+              className="min-h-0 flex-1"
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
+            </div>
+          )}
 
-          <AnimatePresence mode="wait">
-            {(isTranslating || recorderStatus === "processing") && (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-              >
-                <GlassPanel variant="subtle" className="px-4 py-8 text-center">
-                  <div className="mx-auto mb-3 size-5 animate-spin rounded-full border-2 border-primary/15 border-t-primary/70" />
-                  <p className="text-sm text-muted-foreground">
-                    {loadingMessage}
-                  </p>
-                </GlassPanel>
-              </motion.div>
-            )}
+          <div className="shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <AdaptiveComposer
+              value={input}
+              onChange={(next) => {
+                setInput(next)
+                setInputSource(screenshotFile ? "mixed" : "typed")
+              }}
+              placeholder={genderConfig.typePlaceholder}
+              ariaLabel={genderConfig.typeLabel}
+              phrases={genderConfig.samplePhrases}
+              showPresets={!conversationStarted}
+              useCyclingExamples={conversationStarted}
+              disabled={isBusy}
+              isSubmitting={isTranslating}
+              screenshotPreviewUrl={screenshotPreviewUrl}
+              screenshotFileName={screenshotFile?.name}
+              onScreenshotChange={handleScreenshotChange}
+              onRemoveScreenshot={clearScreenshot}
+              recorderStatus={recorderStatus}
+              durationMs={durationMs}
+              waveformHistory={waveformHistory}
+              liveLevels={liveLevels}
+              isMicSupported={isMicSupported}
+              micUnsupportedReason={micUnsupportedReason}
+              onToggleRecording={() => void handleToggleRecording()}
+              onSelectPreset={handleSample}
+              onSubmit={handleSubmit}
+            />
 
-            {result && !isTranslating && recorderStatus !== "processing" && (
-              <motion.div
-                key="result"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <TranslationResultCard
-                  result={result}
-                  subjectLabel={genderConfig.subjectLabel}
-                  resultLabel={genderConfig.resultLabel}
-                  isFetchingAnalysis={isFetchingAiInsight}
-                  isSpeaking={isSpeaking}
-                  onSpeak={() => void handleSpeakTranslation()}
-                  onCopy={() => void copyResult()}
-                  onReset={handleReset}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <footer className="text-center text-[11px] text-muted-foreground/80">
-            Text, voice, or screenshot — one translator. Voice stays on-device
-            until transcribed.
-          </footer>
+            <footer className="mt-2 space-y-1 text-center text-[11px] text-muted-foreground/80">
+              <p>
+                Entertainment only — not professional advice.{" "}
+                <Link
+                  href="/disclaimer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Disclaimer
+                </Link>
+                {" · "}
+                <Link
+                  href="/privacy"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Privacy
+                </Link>
+                {" · "}
+                <Link
+                  href="/terms"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Terms
+                </Link>
+              </p>
+              <p>
+                Made for Cursor iOS hackathon, 9 July 2026, by{" "}
+                <a
+                  href="https://github.com/hcnc101"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  hcnc101
+                </a>{" "}
+                &{" "}
+                <a
+                  href="https://github.com/ghcpuman902/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  ghcpuman902
+                </a>
+              </p>
+            </footer>
+          </div>
         </div>
       </div>
     </>

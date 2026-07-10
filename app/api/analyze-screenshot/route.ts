@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { enforceRateLimit } from "@/lib/server/rate-limit"
 import { isGatewayConfigured } from "@/lib/server-env"
 import { runTranslatePipelineForGender } from "@/lib/translate-pipeline"
 
@@ -45,6 +46,16 @@ const hasValidImageSignature = (
 }
 
 export async function POST(request: Request) {
+  const rateLimited = await enforceRateLimit(request, {
+    routeName: "analyze-screenshot",
+    limit: 20,
+    windowSeconds: 60,
+  })
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   if (!isGatewayConfigured()) {
     return NextResponse.json(
       {

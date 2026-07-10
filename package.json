@@ -14,13 +14,15 @@
     "typecheck": "tsc --noEmit",
     "test:translate": "pnpm dlx tsx scripts/test-translate.ts",
     "test:dictionary": "pnpm dlx tsx scripts/test-dictionary-coverage.ts",
-    "test:whisper": "pnpm dlx tsx scripts/test-whisper.ts"
+    "test:whisper": "pnpm dlx tsx scripts/test-whisper.ts",
+    "test:chat-history": "pnpm dlx tsx scripts/test-chat-history.ts"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.15",
     "@base-ui/react": "^1.6.0",
     "@radix-ui/react-tabs": "^1.1.17",
     "@shadcn/react": "^0.2.1",
+    "@vercel/functions": "^3.7.5",
     "ai": "^7.0.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -37,6 +39,7 @@
     "react-dom": "19.2.4",
     "react-resizable-panels": "^4.12.1",
     "recharts": "3.8.0",
+    "redis": "^6.1.0",
     "shadcn": "^4.13.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",

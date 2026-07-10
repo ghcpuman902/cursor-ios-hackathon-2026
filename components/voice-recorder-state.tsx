@@ -54,8 +54,8 @@ export const VoiceRecorderState = ({
         className="h-14 sm:h-16"
       />
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="min-h-8 flex-1 text-xs leading-relaxed text-muted-foreground">
+      <div className="flex items-end justify-between gap-3">
+        <p className="min-h-11 flex-1 py-2 text-xs leading-relaxed text-muted-foreground">
           {showRantHint
             ? "Just having a rant? We're listening."
             : "Speak clearly — we'll drop the transcript into the composer."}

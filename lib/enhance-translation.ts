@@ -1,11 +1,11 @@
 import { generateText, Output } from "ai"
 import { z } from "zod"
 
+import { readStructuredOutput } from "@/lib/ai-structured-output"
 import { getTextModel } from "@/lib/ai"
 import {
   buildDictionaryAiPayload,
   toDictionaryContext,
-  type AiEnhancement,
 } from "@/lib/dictionary-context"
 import {
   aiFailureFallback,
@@ -83,9 +83,12 @@ export const enhanceTranslation = async (
       },
     })
 
-    const aiEnhancement: AiEnhancement = result.output
+    const aiEnhancement = readStructuredOutput(
+      () => result.output,
+      "AI footnote enhancement"
+    )
 
-    if (!aiEnhancement.text.trim()) {
+    if (!aiEnhancement?.text.trim()) {
       return {
         ...baseline,
         aiInsight: aiFailureFallback(direction),

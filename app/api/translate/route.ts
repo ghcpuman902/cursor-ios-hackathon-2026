@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { enforceRateLimit } from "@/lib/server/rate-limit"
 import { isGatewayConfigured } from "@/lib/server-env"
 import {
   runTranslatePipeline,
@@ -111,6 +112,16 @@ const parseImageFromForm = async (
 }
 
 export async function POST(request: Request) {
+  const rateLimited = await enforceRateLimit(request, {
+    routeName: "translate",
+    limit: 30,
+    windowSeconds: 60,
+  })
+
+  if (rateLimited) {
+    return rateLimited
+  }
+
   try {
     const contentType = request.headers.get("content-type") ?? ""
     let text: string | undefined

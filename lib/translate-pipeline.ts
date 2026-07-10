@@ -1,6 +1,7 @@
 import { generateText, Output } from "ai"
 import { z } from "zod"
 
+import { readStructuredOutput } from "@/lib/ai-structured-output"
 import { getTextModel } from "@/lib/ai"
 import {
   buildDictionaryAiPayload,
@@ -17,7 +18,6 @@ import { deescalateRant } from "@/lib/rant"
 import { isGatewayConfigured } from "@/lib/server-env"
 import type { TranslationDirection } from "@/lib/translation-types"
 import {
-  aiFailureFallback,
   buildFootnotePrompt,
   buildLocalSupportingFootnote,
   buildLongAnalysisPrompt,
@@ -253,7 +253,15 @@ const extractConversationFromImage = async (params: {
     },
   })
 
-  return messagesToTextContext(extraction.output.messages)
+  const output = readStructuredOutput(
+    () => extraction.output,
+    "Screenshot extraction"
+  )
+  if (!output?.messages?.length) {
+    throw new Error("Screenshot extraction returned no messages.")
+  }
+
+  return messagesToTextContext(output.messages)
 }
 
 const extractPhraseWithAi = async (params: {
@@ -279,7 +287,15 @@ const extractPhraseWithAi = async (params: {
     },
   })
 
-  return result.output
+  const output = readStructuredOutput(
+    () => result.output,
+    "Phrase extraction"
+  )
+  if (!output) {
+    throw new Error("Phrase extraction returned no output.")
+  }
+
+  return output
 }
 
 const buildAiFootnote = async (params: {
@@ -292,7 +308,7 @@ const buildAiFootnote = async (params: {
     screenshotMessages?: ScreenshotMessage[]
     longInput?: string
   }
-}): Promise<AiEnhancement> => {
+}): Promise<AiEnhancement | null> => {
   const dictionary = toDictionaryContext(params.baseline)
   const result = await generateText({
     model: getTextModel(),
@@ -312,7 +328,7 @@ const buildAiFootnote = async (params: {
         },
       })
     ),
-    maxOutputTokens: 400,
+    maxOutputTokens: 512,
     abortSignal: AbortSignal.timeout(15_000),
     providerOptions: {
       gateway: {
@@ -321,7 +337,12 @@ const buildAiFootnote = async (params: {
     },
   })
 
-  return result.output
+  const output = readStructuredOutput(() => result.output, "AI footnote")
+  if (!output?.text?.trim()) {
+    return null
+  }
+
+  return output
 }
 
 const buildLongAnalysisWithAi = async (params: {
@@ -359,7 +380,11 @@ const buildLongAnalysisWithAi = async (params: {
     },
   })
 
-  const output = result.output
+  const output = readStructuredOutput(() => result.output, "Long analysis")
+  if (!output) {
+    throw new Error("Long analysis returned no output.")
+  }
+
   return {
     whyThisPhrase: output.whyThisPhrase,
     contextSignals: output.contextSignals,
@@ -412,7 +437,15 @@ const buildScreenshotNotesWithAi = async (params: {
     },
   })
 
-  return result.output
+  const output = readStructuredOutput(
+    () => result.output,
+    "Screenshot notes"
+  )
+  if (!output) {
+    throw new Error("Screenshot notes returned no output.")
+  }
+
+  return output
 }
 
 const attachFootnoteOrFallback = async (params: {
@@ -434,25 +467,33 @@ const attachFootnoteOrFallback = async (params: {
     direction: params.direction,
     isFallback: params.baseline.isFallback,
   })
+  const localEnhancement: AiEnhancement = {
+    type: params.baseline.isFallback
+      ? "alternate_reading"
+      : "overthinking_check",
+    text: localFootnote,
+    relationshipToDictionary: params.baseline.isFallback
+      ? "adds_context"
+      : "supports",
+    contextConflict: false,
+  }
 
   if (!params.gatewayReady) {
     return {
       aiInsight: localFootnote,
-      aiEnhancement: {
-        type: params.baseline.isFallback
-          ? "alternate_reading"
-          : "overthinking_check",
-        text: localFootnote,
-        relationshipToDictionary: params.baseline.isFallback
-          ? "adds_context"
-          : "supports",
-        contextConflict: false,
-      },
+      aiEnhancement: localEnhancement,
     }
   }
 
   try {
     const enhancement = await buildAiFootnote(params)
+    if (!enhancement) {
+      return {
+        aiInsight: localFootnote,
+        aiEnhancement: localEnhancement,
+      }
+    }
+
     return {
       aiInsight: enhancement.text,
       aiEnhancement: enhancement,
@@ -460,13 +501,8 @@ const attachFootnoteOrFallback = async (params: {
   } catch (error) {
     console.error("AI footnote failed:", error)
     return {
-      aiInsight: aiFailureFallback(params.direction),
-      aiEnhancement: {
-        type: "alternate_reading",
-        text: aiFailureFallback(params.direction),
-        relationshipToDictionary: "adds_context",
-        contextConflict: false,
-      },
+      aiInsight: localFootnote,
+      aiEnhancement: localEnhancement,
     }
   }
 }

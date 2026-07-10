@@ -5,13 +5,14 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from "react"
-import { ArrowRight, ImageUp, Mic, Sparkles } from "lucide-react"
+import { ImageUp, Mic, Send } from "lucide-react"
 
 import { AttachmentPreview } from "@/components/attachment-preview"
 import { PresetChips } from "@/components/preset-chips"
 import { VoiceRecorderState } from "@/components/voice-recorder-state"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { useCyclingPlaceholder } from "@/hooks/use-cycling-placeholder"
 import { getSecureMicUrl } from "@/lib/audio-capture-support"
 import { cn } from "@/lib/utils"
 
@@ -23,6 +24,8 @@ type AdaptiveComposerProps = {
   placeholder: string
   ariaLabel: string
   phrases: readonly string[]
+  showPresets?: boolean
+  useCyclingExamples?: boolean
   disabled?: boolean
   isSubmitting?: boolean
   screenshotPreviewUrl: string | null
@@ -47,6 +50,8 @@ export const AdaptiveComposer = ({
   placeholder,
   ariaLabel,
   phrases,
+  showPresets = true,
+  useCyclingExamples = false,
   disabled = false,
   isSubmitting = false,
   screenshotPreviewUrl,
@@ -62,7 +67,7 @@ export const AdaptiveComposer = ({
   onToggleRecording,
   onSelectPreset,
   onSubmit,
-  submitLabel = "Translate",
+  submitLabel = "Send",
 }: AdaptiveComposerProps) => {
   const screenshotInputRef = useRef<HTMLInputElement | null>(null)
   const isRecording =
@@ -70,6 +75,11 @@ export const AdaptiveComposer = ({
   const isBusy = disabled || isSubmitting || isRecording
   const canSubmit =
     !isBusy && (Boolean(value.trim()) || Boolean(screenshotPreviewUrl))
+  const cyclingPlaceholder = useCyclingPlaceholder(
+    phrases,
+    useCyclingExamples && !value.trim() && !isRecording
+  )
+  const resolvedPlaceholder = cyclingPlaceholder ?? placeholder
 
   const handleScreenshotPick = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
@@ -84,8 +94,56 @@ export const AdaptiveComposer = ({
     }
   }
 
+  const renderMicButton = () => {
+    if (!isMicSupported) {
+      return (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="size-11 shrink-0 rounded-full border border-white/12 bg-white/[0.05] text-white/40"
+          disabled
+          aria-label={
+            micUnsupportedReason === "insecure-context"
+              ? `Microphone needs HTTPS. Try ${getSecureMicUrl()}`
+              : "Microphone unavailable"
+          }
+          title={
+            micUnsupportedReason === "insecure-context"
+              ? `Open ${getSecureMicUrl()} for mic access`
+              : "Microphone unavailable in this browser"
+          }
+        >
+          <Mic className="size-4" aria-hidden />
+        </Button>
+      )
+    }
+
+    return (
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="size-11 shrink-0 rounded-full border border-white/12 bg-white/[0.08] text-white/80 hover:bg-white/14"
+        onClick={onToggleRecording}
+        disabled={isBusy}
+        aria-label="Start voice input"
+      >
+        <Mic className="size-4" aria-hidden />
+      </Button>
+    )
+  }
+
   return (
     <div className="space-y-3">
+      {showPresets && !isRecording && (
+        <PresetChips
+          phrases={phrases}
+          disabled={isBusy}
+          onSelect={onSelectPreset}
+        />
+      )}
+
       <div
         className={cn(
           "rounded-[1.75rem] border border-white/12 bg-white/[0.07] p-3 shadow-sm backdrop-blur-xl sm:p-4",
@@ -113,17 +171,17 @@ export const AdaptiveComposer = ({
 
             <Textarea
               aria-label={ariaLabel}
-              placeholder={placeholder}
+              placeholder={resolvedPlaceholder}
               value={value}
               onChange={(event) => onChange(event.target.value)}
               onKeyDown={handleKeyDown}
-              rows={4}
-              className="min-h-28 resize-none border-0 bg-transparent px-1 py-1 text-base text-foreground shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0"
+              rows={3}
+              className="min-h-24 resize-none border-0 bg-transparent px-1 py-1 text-base text-foreground shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0"
               disabled={isBusy}
             />
 
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <input
                   ref={screenshotInputRef}
                   id="composer-screenshot"
@@ -145,56 +203,16 @@ export const AdaptiveComposer = ({
                   <ImageUp className="size-4" aria-hidden />
                 </Button>
 
-                {isMicSupported ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="size-10 rounded-full border border-white/12 bg-white/[0.08] text-white/80 hover:bg-white/14"
-                    onClick={onToggleRecording}
-                    disabled={isBusy}
-                    aria-label="Start voice input"
-                  >
-                    <Mic className="size-4" aria-hidden />
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="size-10 rounded-full border border-white/12 bg-white/[0.05] text-white/40"
-                    disabled
-                    aria-label={
-                      micUnsupportedReason === "insecure-context"
-                        ? `Microphone needs HTTPS. Try ${getSecureMicUrl()}`
-                        : "Microphone unavailable"
-                    }
-                    title={
-                      micUnsupportedReason === "insecure-context"
-                        ? `Open ${getSecureMicUrl()} for mic access`
-                        : "Microphone unavailable in this browser"
-                    }
-                  >
-                    <Mic className="size-4" aria-hidden />
-                  </Button>
-                )}
+                <p className="hidden min-w-0 truncate text-[10px] text-muted-foreground sm:block">
+                  ⌘/Ctrl + Enter
+                </p>
               </div>
 
-              <p className="hidden text-[10px] text-muted-foreground sm:block">
-                ⌘/Ctrl + Enter
-              </p>
+              {renderMicButton()}
             </div>
           </div>
         )}
       </div>
-
-      {!isRecording && (
-        <PresetChips
-          phrases={phrases}
-          disabled={isBusy}
-          onSelect={onSelectPreset}
-        />
-      )}
 
       <Button
         type="button"
@@ -203,9 +221,8 @@ export const AdaptiveComposer = ({
         className="h-12 w-full rounded-full"
         size="lg"
       >
-        <Sparkles aria-hidden />
+        <Send aria-hidden />
         {submitLabel}
-        <ArrowRight aria-hidden />
       </Button>
     </div>
   )

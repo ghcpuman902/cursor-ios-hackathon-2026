@@ -18,11 +18,9 @@ export { FEMALE_TRANSLATIONS } from "@/lib/translations-female"
 
 import type { TranslationEntry } from "@/lib/translation-types"
 
-/** Shared adaptive-composer presets (both directions). */
-export const SAMPLE_PHRASES = [
+/** Presets for male → female (“what he said”). */
+export const MALE_SAMPLE_PHRASES = [
   "k",
-  "I'm fine",
-  "Do whatever you want",
   "I'm almost there",
   "Trust me",
   "You should've reminded me",
@@ -30,9 +28,26 @@ export const SAMPLE_PHRASES = [
   "Family stuff",
   "The match kicks off at 1am",
   "Meeting the lads for the match",
+  "Make me a tea",
+  "What do you want me to do",
 ] as const
 
-export const FEMALE_SAMPLE_PHRASES = SAMPLE_PHRASES
+/** Presets for female → male (“what she said”). */
+export const FEMALE_SAMPLE_PHRASES = [
+  "I'm fine",
+  "Do whatever you want",
+  "Never mind",
+  "Where are you",
+  "On the way",
+  "You said that",
+  "It's fine",
+  "We need to talk",
+  "Just be honest",
+  "Have fun with your friends then",
+] as const
+
+/** @deprecated Prefer MALE_SAMPLE_PHRASES or FEMALE_SAMPLE_PHRASES */
+export const SAMPLE_PHRASES = MALE_SAMPLE_PHRASES
 
 export const LOADING_MESSAGES = [
   "Consulting the cosy horoscope…",
