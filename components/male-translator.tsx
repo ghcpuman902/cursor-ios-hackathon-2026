@@ -20,7 +20,10 @@ import {
 } from "@/lib/input-classifier"
 import { deescalateRant } from "@/lib/rant"
 import { SAMPLE_PHRASES } from "@/lib/translations"
-import { genderToDirection } from "@/lib/translate-prompts"
+import {
+  buildLocalSupportingFootnote,
+  genderToDirection,
+} from "@/lib/translate-prompts"
 import {
   getRandomLoadingMessage,
   getRandomFemaleLoadingMessage,
@@ -218,11 +221,28 @@ const buildLocalResult = (
       ? translateFemale(phrase, { sarcasmLevel, gruntMode })
       : translateMale(phrase, { sarcasmLevel, gruntMode })
 
+  const localFootnote = buildLocalSupportingFootnote({
+    direction,
+    isFallback: baseline.isFallback,
+  })
+  const localEnhancement = {
+    type: baseline.isFallback
+      ? ("alternate_reading" as const)
+      : ("overthinking_check" as const),
+    text: localFootnote,
+    relationshipToDictionary: baseline.isFallback
+      ? ("adds_context" as const)
+      : ("supports" as const),
+    contextConflict: false,
+  }
+
   if (mode === "short_translation") {
     return {
       ...baseline,
       mode,
       input: text,
+      aiInsight: localFootnote,
+      aiEnhancement: localEnhancement,
     }
   }
 
@@ -237,10 +257,17 @@ const buildLocalResult = (
     mode,
     input: text,
     extractedPhrase: phrase,
+    aiInsight: localFootnote,
+    aiEnhancement: localEnhancement,
     analysis: {
       whyThisPhrase: rant.whatHappened,
       contextSignals: rant.likelyNonSeriousExplanations.slice(0, 3),
       whatUserBrainAdded: [rant.whatYourBrainAdded],
+      extraStoryAdded: [rant.whatYourBrainAdded],
+      relationshipToDictionary: baseline.isFallback
+        ? "adds_context"
+        : "supports",
+      contextConflict: false,
     },
   }
 }
@@ -412,13 +439,15 @@ export function MaleTranslator({
             return current
           }
 
+          // Dictionary card stays primary; AI only adds supporting fields.
           return {
             ...current,
-            ...enhanced,
-            // Keep local comic card if server somehow omitted fields
-            comicTranslation:
-              enhanced.comicTranslation || current.comicTranslation,
-            translation: enhanced.translation || current.translation,
+            aiInsight: enhanced.aiInsight ?? current.aiInsight,
+            aiEnhancement: enhanced.aiEnhancement ?? current.aiEnhancement,
+            analysis: enhanced.analysis ?? current.analysis,
+            extractedPhrase:
+              enhanced.extractedPhrase ?? current.extractedPhrase,
+            mode: enhanced.mode ?? current.mode,
           }
         })
       } catch {

@@ -10,6 +10,10 @@ import {
 } from "@/lib/translations"
 import type { TranslationPipelineMode } from "@/lib/input-classifier"
 import type {
+  AiEnhancement,
+  ContextRelationship,
+} from "@/lib/dictionary-context"
+import type {
   RiskLevel,
   TranslationCategory,
   TranslationDirection,
@@ -31,7 +35,17 @@ export type TranslationAnalysis = {
   whyThisPhrase?: string
   contextSignals?: string[]
   screenshotNotes?: string[]
+  /** @deprecated Prefer extraStoryAdded */
   whatUserBrainAdded?: string[]
+  extraStoryAdded?: string[]
+  relationshipToDictionary?: ContextRelationship
+  contextConflict?: boolean
+  phraseSourceType?:
+    | "direct_quote"
+    | "paraphrase"
+    | "pivotal_phrase"
+    | "action"
+    | "synthesised"
 }
 
 export type TranslationResult = {
@@ -55,8 +69,10 @@ export type TranslationResult = {
   matchedPattern?: string
   isFallback: boolean
   source: "dictionary" | "ai"
-  /** Optional AI-written supplemental footnote */
+  /** Optional AI-written supplemental footnote text (mirrors aiEnhancement.text) */
   aiInsight?: string
+  /** Structured short-input / footnote enhancement */
+  aiEnhancement?: AiEnhancement
   /** Optional richer analysis for long / screenshot context */
   analysis?: TranslationAnalysis
 }

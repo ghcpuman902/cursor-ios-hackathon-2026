@@ -102,6 +102,14 @@ export const TranslationResultCard = ({
                 </p>
               )}
 
+              {(analysis?.contextConflict ||
+                result.aiEnhancement?.contextConflict) && (
+                <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm leading-relaxed text-foreground/85">
+                  Context caveat: the thread or rant may soften or challenge
+                  today&apos;s dictionary reading — card above stays primary.
+                </p>
+              )}
+
               {analysis?.whyThisPhrase && (
                 <p className="text-sm leading-relaxed text-foreground/80">
                   {analysis.whyThisPhrase}
@@ -116,14 +124,19 @@ export const TranslationResultCard = ({
                 </ul>
               )}
 
-              {analysis?.whatUserBrainAdded &&
-                analysis.whatUserBrainAdded.length > 0 && (
+              {(analysis?.extraStoryAdded ?? analysis?.whatUserBrainAdded) &&
+                (analysis?.extraStoryAdded ?? analysis?.whatUserBrainAdded)!
+                  .length > 0 && (
                   <div className="space-y-1">
                     <p className="text-[11px] font-medium text-foreground/70">
                       What your brain may have added
                     </p>
                     <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
-                      {analysis.whatUserBrainAdded.map((item) => (
+                      {(
+                        analysis?.extraStoryAdded ??
+                        analysis?.whatUserBrainAdded ??
+                        []
+                      ).map((item) => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>

@@ -28,6 +28,341 @@ export const MALE_TRANSLATIONS: MaleTranslation[] = [
     category: "relationship",
   },
   {
+    pattern: "make me a tea",
+    headline: "🍵 The Kettle Omen",
+    comicTranslation:
+      "The tea leaves are refreshingly boring: he would like tea. Possibly now.",
+    spicyComicTranslation:
+      "No secret subplot in the mug. Today's reading: hot water + leaf + you.",
+    possibleActualMeaning:
+      "This may be a literal hospitality request, not a coded emotional novel.",
+    riskLevel: "low",
+    lowestRiskReply: "On it — tea incoming.",
+    tinyWholesomeNudge: "Sometimes care is just boiling water.",
+    category: "classic",
+  },
+  {
+    pattern: "make me tea",
+    headline: "🍵 The Kettle Omen",
+    comicTranslation:
+      "The tea leaves are refreshingly boring: he would like tea. Possibly now.",
+    spicyComicTranslation:
+      "No secret subplot in the mug. Today's reading: hot water + leaf + you.",
+    possibleActualMeaning:
+      "This may be a literal hospitality request, not a coded emotional novel.",
+    riskLevel: "low",
+    lowestRiskReply: "On it — tea incoming.",
+    tinyWholesomeNudge: "Sometimes care is just boiling water.",
+    category: "classic",
+  },
+  // World Cup 2026 / late kick-offs / mates night — longer patterns first
+  {
+    pattern: "the match kicks off at 1am",
+    headline: "🌙 Midnight Kick-Off Eclipse",
+    comicTranslation:
+      "The moon card is doing overtime. He may be asking for one sacred late-night ritual, not a breakup.",
+    spicyComicTranslation:
+      "FIFA scheduled feelings for after midnight. He wants permission, not a tribunal.",
+    possibleActualMeaning:
+      "A 1am BST kick-off is brutal but real for UK fans — he may want company, silence, or grace tomorrow.",
+    riskLevel: "medium",
+    lowestRiskReply:
+      "I know it's late — want me nearby, or want the room dark and peaceful?",
+    tinyWholesomeNudge:
+      "Negotiate sleep vs match once. Then pick a side without a midnight trial.",
+    category: "plans",
+  },
+  {
+    pattern: "kick off is at 1am",
+    headline: "🌙 Midnight Kick-Off Eclipse",
+    comicTranslation:
+      "The moon card is doing overtime. He may be asking for one sacred late-night ritual, not a breakup.",
+    spicyComicTranslation:
+      "FIFA scheduled feelings for after midnight. He wants permission, not a tribunal.",
+    possibleActualMeaning:
+      "A 1am BST kick-off is brutal but real for UK fans — he may want company, silence, or grace tomorrow.",
+    riskLevel: "medium",
+    lowestRiskReply:
+      "I know it's late — want me nearby, or want the room dark and peaceful?",
+    tinyWholesomeNudge:
+      "Negotiate sleep vs match once. Then pick a side without a midnight trial.",
+    category: "plans",
+  },
+  {
+    pattern: "it's a late kick off tonight",
+    headline: "⏰ Late Fixture Weather",
+    comicTranslation:
+      "The clock card sighs. 'Late kick-off' may mean he already knows tomorrow will be tender.",
+    possibleActualMeaning:
+      "He may be warning you the night runs long — extra time, penalties, and post-match debrief included.",
+    riskLevel: "medium",
+    lowestRiskReply: "How late are we talking — and do you want company or solo viewing?",
+    tinyWholesomeNudge: "Late fixtures are a schedule fact, not a loyalty test.",
+    category: "plans",
+  },
+  {
+    pattern: "late kick off tonight",
+    headline: "⏰ Late Fixture Weather",
+    comicTranslation:
+      "The clock card sighs. 'Late kick-off' may mean he already knows tomorrow will be tender.",
+    possibleActualMeaning:
+      "He may be warning you the night runs long — extra time, penalties, and post-match debrief included.",
+    riskLevel: "medium",
+    lowestRiskReply: "How late are we talking — and do you want company or solo viewing?",
+    tinyWholesomeNudge: "Late fixtures are a schedule fact, not a loyalty test.",
+    category: "plans",
+  },
+  {
+    pattern: "fifa changed the kick off",
+    headline: "🃏 Schedule Chaos Card",
+    comicTranslation:
+      "The fixture card flipped mid-reading. He may be stressed about plans, travel, and sleep all at once.",
+    spicyComicTranslation:
+      "Even the oracle got a push notification. Kick-off drama is real; relationship drama is optional.",
+    possibleActualMeaning:
+      "Late schedule changes wreck fan plans — he may need patience, not a lecture about caring more.",
+    riskLevel: "medium",
+    lowestRiskReply: "That's annoying — what time is it now?",
+    tinyWholesomeNudge: "Match chaos is external. Don't make him defend FIFA to you.",
+    category: "plans",
+  },
+  {
+    pattern: "kick off got moved",
+    headline: "🃏 Schedule Chaos Card",
+    comicTranslation:
+      "The fixture card flipped mid-reading. He may be stressed about plans, travel, and sleep all at once.",
+    possibleActualMeaning:
+      "A moved kick-off can trash a whole evening — he may be venting logistics, not picking a fight.",
+    riskLevel: "medium",
+    lowestRiskReply: "Ugh — earlier or later now?",
+    tinyWholesomeNudge: "React to the new time, not the drama spiral.",
+    category: "plans",
+  },
+  {
+    pattern: "if it goes to extra time",
+    headline: "➕ Injury-Time Omen",
+    comicTranslation:
+      "The spread adds bonus chapters. He may already be budgeting another thirty to sixty emotional minutes.",
+    possibleActualMeaning:
+      "Extra time means a later night — he may want you to expect overrun, not treat it as betrayal.",
+    riskLevel: "low",
+    lowestRiskReply: "Got it — I'll assume bedtime is fuzzy tonight.",
+    tinyWholesomeNudge: "Football overrun is predictable. Surprise is the only sin.",
+    category: "plans",
+  },
+  {
+    pattern: "might go to penalties",
+    headline: "🎯 Shootout Suspense",
+    comicTranslation:
+      "The final card is dramatic by design. Penalties may mean he cannot look away until fate decides.",
+    possibleActualMeaning:
+      "A shootout extends the night and the adrenaline — he may need grace, not a countdown glare.",
+    riskLevel: "medium",
+    lowestRiskReply: "If it goes to pens, text me when it's over?",
+    tinyWholesomeNudge: "High-stakes endings are short. The snoring can wait.",
+    category: "plans",
+  },
+  {
+    pattern: "i'm staying up for the world cup",
+    headline: "🏆 Tournament Vigil",
+    comicTranslation:
+      "The World Cup card glows. He may be claiming one rare season of national ritual.",
+    spicyComicTranslation:
+      "Cosmic rule: this tournament happens every four years. He thinks that matters. It might.",
+    possibleActualMeaning:
+      "He may want to watch a big match live even if sleep dies tomorrow — negotiate, don't moralise.",
+    riskLevel: "medium",
+    lowestRiskReply: "Which match — and do you want snacks, silence, or company?",
+    tinyWholesomeNudge: "Pick your boundary once. Then let the tournament be the tournament.",
+    category: "plans",
+  },
+  {
+    pattern: "staying up for england tonight",
+    headline: "🏴 National Ritual Night",
+    comicTranslation:
+      "The patriotism card is upright and caffeinated. He may be asking for one night of shared chaos.",
+    possibleActualMeaning:
+      "England nights can run past midnight with delays and drama — he may want understanding, not a debate.",
+    riskLevel: "medium",
+    lowestRiskReply: "Alright — want me in or want the sofa to yourself?",
+    tinyWholesomeNudge: "National matches are loud weather. You can still set one sleep boundary.",
+    category: "plans",
+  },
+  {
+    pattern: "it's the world cup final",
+    headline: "👑 Final Spread",
+    comicTranslation:
+      "The crown card appears once every four years. He may not be asking to cancel life — just this one night.",
+    possibleActualMeaning:
+      "Finals feel non-negotiable to many fans — he may want a plan, not permission warfare.",
+    riskLevel: "medium",
+    lowestRiskReply: "Okay — what's the kick-off and what do you need from me?",
+    tinyWholesomeNudge: "Treat it like a known eclipse: rare, scheduled, survivable.",
+    category: "plans",
+  },
+  {
+    pattern: "world cup final tonight",
+    headline: "👑 Final Spread",
+    comicTranslation:
+      "The crown card appears once every four years. He may not be asking to cancel life — just this one night.",
+    possibleActualMeaning:
+      "He may have cleared mental space for a very late night — clarify company vs solo early.",
+    riskLevel: "medium",
+    lowestRiskReply: "What time does it start — and are we watching or are you solo?",
+    tinyWholesomeNudge: "One final, one plan, one gentle boundary.",
+    category: "plans",
+  },
+  {
+    pattern: "meeting the lads for the match",
+    headline: "🍻 Away-Fan Constellation",
+    comicTranslation:
+      "The social card points out the door. He may want pub energy, not a relationship referendum.",
+    possibleActualMeaning:
+      "Watch parties with mates are often about belonging — he may still want to come home to you after.",
+    riskLevel: "medium",
+    lowestRiskReply: "Have fun — text me when you're heading back?",
+    tinyWholesomeNudge: "Ask for a rough return time. Skip the guilt constellation.",
+    category: "plans",
+  },
+  {
+    pattern: "watching at dave's",
+    headline: "📺 Mate-House Broadcast",
+    comicTranslation:
+      "The telly card is in another castle. He may be choosing crisps, banter, and a familiar sofa.",
+    possibleActualMeaning:
+      "Watching at a mate's is usually low drama — he may want a simple ETA, not suspicion.",
+    riskLevel: "low",
+    lowestRiskReply: "Nice — enjoy. Ping me when you're on your way back.",
+    tinyWholesomeNudge: "Dave is not a rival oracle. He's a venue.",
+    category: "plans",
+  },
+  {
+    pattern: "mates are coming over for the game",
+    headline: "🏠 Home Watch Party",
+    comicTranslation:
+      "The hearth card expands. He may be hosting, not hiding — noise levels may rise temporarily.",
+    possibleActualMeaning:
+      "Home watch parties can feel inclusive if framed right — he may want help or space, not a fight.",
+    riskLevel: "medium",
+    lowestRiskReply: "Cool — want me in the room or want me spared the commentary?",
+    tinyWholesomeNudge: "Set one noise/space boundary before kick-off.",
+    category: "plans",
+  },
+  {
+    pattern: "going to the pub for the match",
+    headline: "🍺 Pub Ritual Portal",
+    comicTranslation:
+      "The pint card beckons. He may want collective screaming, not emotional exile.",
+    possibleActualMeaning:
+      "Pub trips are often social + football blended — he may want a return time and zero interrogation.",
+    riskLevel: "medium",
+    lowestRiskReply: "Have fun — what time do you think you'll be back?",
+    tinyWholesomeNudge: "Pub nights need ETA, not mind-reading.",
+    category: "plans",
+  },
+  {
+    pattern: "i'll be tired tomorrow but it's worth it",
+    headline: "☕ Future-Exhaustion Pact",
+    comicTranslation:
+      "He has already signed the tiredness waiver. He may be asking you not to file the complaint tonight.",
+    possibleActualMeaning:
+      "He knows the cost and accepts it — he may want support, not a lecture about sleep hygiene.",
+    riskLevel: "low",
+    lowestRiskReply: "Fair — I'll let tomorrow-you be grumpy in peace.",
+    tinyWholesomeNudge: "Let him enjoy the match. Save the debrief for brunch.",
+    category: "plans",
+  },
+  {
+    pattern: "just one more match",
+    headline: "📺 One-More-Match Mirage",
+    comicTranslation:
+      "The binge card winks. 'One more' may mean ninety minutes plus injury time plus replays.",
+    possibleActualMeaning:
+      "He may be negotiating for one more fixture — set a real end time if you need sleep.",
+    riskLevel: "medium",
+    lowestRiskReply: "Which match — and hard stop after full time?",
+    tinyWholesomeNudge: "Clarify 'one more' in actual minutes, not vibes.",
+    category: "plans",
+  },
+  {
+    pattern: "can't miss this game",
+    headline: "🔥 Must-Watch Omen",
+    comicTranslation:
+      "The urgency card is loud. He may feel this fixture is a once-a-era event, not everyday telly.",
+    possibleActualMeaning:
+      "Knockout football can feel non-optional to fans — he may want grace around a late night.",
+    riskLevel: "medium",
+    lowestRiskReply: "Okay — how late are we on the clock?",
+    tinyWholesomeNudge: "Ask for kick-off and expected end. Then choose your energy.",
+    category: "plans",
+  },
+  {
+    pattern: "watching the world cup",
+    headline: "🌍 Tournament Season",
+    comicTranslation:
+      "The globe card is on for a month. He may be entering a recurring match-night weather pattern.",
+    possibleActualMeaning:
+      "World Cup season means repeated late nights — negotiate a sustainable rhythm early.",
+    riskLevel: "medium",
+    lowestRiskReply: "Which game tonight — and do you want company?",
+    tinyWholesomeNudge: "Seasons have schedules. Couples can too.",
+    category: "plans",
+  },
+  {
+    pattern: "world cup 2026",
+    headline: "🌎 North America Tournament Arc",
+    comicTranslation:
+      "Three countries, many time zones, one man staring at a fixture list like it's astrology.",
+    spicyComicTranslation:
+      "The cards say Seattle 7pm is not the same omen as Miami 7pm. He may be confused too.",
+    possibleActualMeaning:
+      "USA/Mexico/Canada time zones make kick-offs messy — he may need patience around planning.",
+    riskLevel: "low",
+    lowestRiskReply: "Which city is the match in — and what time here?",
+    tinyWholesomeNudge: "Convert kick-off together once. Then stop debating FIFA maths.",
+    category: "plans",
+  },
+  {
+    pattern: "quarter final tonight",
+    headline: "🗡️ Knockout Moon",
+    comicTranslation:
+      "The stakes card is upright. He may treat this like a lunar eclipse — rare, loud, scheduled.",
+    possibleActualMeaning:
+      "Later rounds often mean later kick-offs — he may want a plan for sleep and company.",
+    riskLevel: "medium",
+    lowestRiskReply: "What time's kick-off — want me in or want quiet?",
+    tinyWholesomeNudge: "Knockout nights are finite. Boundaries can be too.",
+    category: "plans",
+  },
+  {
+    pattern: "i want to watch football",
+    headline: "⚽ Match Day Spread",
+    comicTranslation:
+      "The stadium card is upright. He wants football on the screen, not a summit.",
+    spicyComicTranslation:
+      "Cosmic forecast: ninety minutes of ball, zero secret relationship DLC.",
+    possibleActualMeaning:
+      "He may be stating a leisure plan. Context decides if it's also 'please join' or 'please don't schedule drama'.",
+    riskLevel: "low",
+    lowestRiskReply: "Cool — want company, snacks, or solo match vibes?",
+    tinyWholesomeNudge: "Ask the one gentle clarifying question. Then let the match be the match.",
+    category: "plans",
+  },
+  {
+    pattern: "watch football",
+    headline: "⚽ Match Day Spread",
+    comicTranslation:
+      "The stadium card is upright. He wants football on the screen, not a summit.",
+    spicyComicTranslation:
+      "Cosmic forecast: ninety minutes of ball, zero secret relationship DLC.",
+    possibleActualMeaning:
+      "He may be stating a leisure plan. Context decides if it's also 'please join' or 'please don't schedule drama'.",
+    riskLevel: "low",
+    lowestRiskReply: "Cool — want company, snacks, or solo match vibes?",
+    tinyWholesomeNudge: "Ask the one gentle clarifying question. Then let the match be the match.",
+    category: "plans",
+  },
+  {
     pattern: "i'll be ready in 5 minutes",
     headline: "⏳ The Soft Time Mirage",
     comicTranslation:

@@ -613,6 +613,94 @@ export const ARGUMENT_SCRIPTS: ArgumentScript[] = [
       { speaker: "female", text: "Per my last text: confirm by tonight or we cancel." },
     ],
   },
+  {
+    id: "world-cup-late-kickoff",
+    title: "World Cup late kick-off vs date night",
+    theme: "world cup 2026 / football / late nights / mates",
+    lines: [
+      {
+        speaker: "male",
+        text: "It's a late kick off tonight — England play at 1am.",
+        note: "UK fans: Mexico City 6pm = 1am BST Monday",
+      },
+      {
+        speaker: "female",
+        text: "We had plans and you watched the match instead.",
+      },
+      {
+        speaker: "male",
+        text: "FIFA changed the kick off again. I can't control that",
+      },
+      {
+        speaker: "female",
+        text: "The late kick off ruined our night.",
+      },
+      {
+        speaker: "male",
+        text: "Meeting the lads for the match. Watching at Dave's",
+      },
+      {
+        speaker: "female",
+        text: "You said you'd come meet my friends.",
+      },
+      {
+        speaker: "male",
+        text: "I'll be tired tomorrow but it's worth it. Can't miss this game",
+      },
+      {
+        speaker: "female",
+        text: "You're staying up for football again.",
+      },
+      {
+        speaker: "male",
+        text: "If it goes to extra time I'll text you. Might go to penalties",
+      },
+      {
+        speaker: "female",
+        text: "It's 1am and you're still watching.",
+      },
+      {
+        speaker: "male",
+        text: "It's the World Cup final. Just one more match",
+      },
+      {
+        speaker: "female",
+        text: "You chose football over me.",
+      },
+      {
+        speaker: "male",
+        text: "World Cup 2026 — quarter final tonight. I'm staying up for the World Cup",
+      },
+      {
+        speaker: "female",
+        text: "It's just a football match. Football matters more than us.",
+      },
+      {
+        speaker: "male",
+        text: "Going to the pub for the match. Mates are coming over for the game",
+      },
+      {
+        speaker: "female",
+        text: "You stayed up all night for kick off. Don't be late because of extra time.",
+      },
+      {
+        speaker: "male",
+        text: "Kick off got moved. I'll stay up for the match",
+      },
+      {
+        speaker: "female",
+        text: "You were up all night for the World Cup.",
+      },
+      {
+        speaker: "male",
+        text: "I want to watch football. Make me a tea?",
+      },
+      {
+        speaker: "female",
+        text: "Have fun with your friends then.",
+      },
+    ],
+  },
 ]
 
 /** Flat list of all lines for quick iteration */

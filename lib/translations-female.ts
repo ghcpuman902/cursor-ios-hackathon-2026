@@ -91,6 +91,180 @@ export const FEMALE_TRANSLATIONS: FemaleTranslation[] = [
     tinyWholesomeNudge: "Break the loop once. Trust regenerates.",
     category: "plans",
   },
+  // World Cup 2026 / late kick-offs / mates vs plans — longer patterns first
+  {
+    pattern: "you stayed up all night for kick off",
+    headline: "🌙 All-Night Raid",
+    comicTranslation:
+      "You cleared a midnight dungeon and forgot the morning quest with her.",
+    possibleActualMeaning:
+      "A 1am kick-off plus extra time can wreck sleep — she may feel second to the fixture.",
+    riskLevel: "high",
+    lowestRiskReply:
+      "You're right — I was gone all night. Sorry. What do you need today?",
+    tinyWholesomeNudge: "Own the tired fallout. Don't cite FIFA rulebook.",
+    category: "relationship",
+  },
+  {
+    pattern: "you're staying up for football again",
+    headline: "🔁 Late Kick-Off Loop",
+    comicTranslation:
+      "Same side quest, new matchday. She has seen this season before.",
+    possibleActualMeaning:
+      "Repeated late nights during a tournament can feel like neglect — she may want a plan.",
+    riskLevel: "high",
+    lowestRiskReply:
+      "Fair — which nights matter most to you, and which can I watch muted/late?",
+    tinyWholesomeNudge: "Negotiate the calendar once. Don't relitigate every fixture.",
+    category: "relationship",
+  },
+  {
+    pattern: "it's 1am and you're still watching",
+    headline: "⏰ Past Bedtime Boss",
+    comicTranslation:
+      "Curfew breached. Screen still active. She is not fighting the scoreline — she's fighting the pattern.",
+    possibleActualMeaning:
+      "She may need sleep, peace, or reassurance that tomorrow still exists for you two.",
+    riskLevel: "high",
+    lowestRiskReply: "You're right — I'll mute it after full time. Sorry.",
+    tinyWholesomeNudge: "Give a hard stop time. Then actually hit it.",
+    category: "relationship",
+  },
+  {
+    pattern: "the late kick off ruined our night",
+    headline: "💥 Schedule Collision",
+    comicTranslation:
+      "World Cup patch dropped on date night. She didn't queue for this.",
+    possibleActualMeaning:
+      "A brutal kick-off time may have trashed plans — she may want repair, not sports defence.",
+    riskLevel: "high",
+    lowestRiskReply:
+      "You're right — I let the match eat the evening. Can we redo it this week?",
+    tinyWholesomeNudge: "Apologise for the plan loss. Reschedule with a date.",
+    category: "plans",
+  },
+  {
+    pattern: "you picked the match over me",
+    headline: "⚔️ Priority Boss Fight",
+    comicTranslation:
+      "She thinks you chose the tournament branch. This is a loyalty check, not tactics.",
+    possibleActualMeaning:
+      "She may feel deprioritised — clarify what you can still show up for.",
+    riskLevel: "high",
+    lowestRiskReply:
+      "I hear you. I got carried away — what would help you feel chosen tonight?",
+    tinyWholesomeNudge: "Don't debate kick-off aesthetics. Show up emotionally.",
+    category: "relationship",
+  },
+  {
+    pattern: "you chose football over me",
+    headline: "⚔️ Priority Boss Fight",
+    comicTranslation:
+      "Football won the aggro table. She wants to know if she's still in the party.",
+    possibleActualMeaning:
+      "This may be hurt, not anti-sport — she wants reassurance and a concrete gesture.",
+    riskLevel: "high",
+    lowestRiskReply: "You matter more than the match. I'm sorry I made it feel otherwise.",
+    tinyWholesomeNudge: "One sincere repair action beats ten tactical explanations.",
+    category: "relationship",
+  },
+  {
+    pattern: "we had plans and you watched the match",
+    headline: "📅 Quest Skipped",
+    comicTranslation:
+      "Main quest was on the calendar. You side-quested into injury time.",
+    possibleActualMeaning:
+      "She may feel plans were broken for football — own the miss and offer a redo.",
+    riskLevel: "high",
+    lowestRiskReply: "You're right — I should've told you earlier. Let's reschedule properly.",
+    tinyWholesomeNudge: "Replace the plan, not the excuse.",
+    category: "plans",
+  },
+  {
+    pattern: "you said you'd come meet my friends",
+    headline: "👥 Party Quest Abandoned",
+    comicTranslation:
+      "She queued with her squad. You AFK'd to a watch party.",
+    possibleActualMeaning:
+      "She may feel embarrassed or alone — meeting her friends mattered socially.",
+    riskLevel: "high",
+    lowestRiskReply:
+      "I messed up — I should've been there. Can I make it up to you and them?",
+    tinyWholesomeNudge: "Offer a new meet-up. Show face. Don't send highlights.",
+    category: "plans",
+  },
+  {
+    pattern: "you're meeting your friends instead",
+    headline: "🔀 Wrong Lobby",
+    comicTranslation:
+      "She thought you were joining her instance. You loaded into lads night.",
+    possibleActualMeaning:
+      "She may feel swapped out for mates — clarify why and how you'll reconnect after.",
+    riskLevel: "medium",
+    lowestRiskReply: "I should've been clearer — I'll text you properly after the match.",
+    tinyWholesomeNudge: "Give ETA and a check-in. Mates night isn't stealth mode.",
+    category: "plans",
+  },
+  {
+    pattern: "football matters more than us",
+    headline: "💔 Relationship Meta",
+    comicTranslation:
+      "She thinks the game is your main questline now. Prove the co-op still exists.",
+    possibleActualMeaning:
+      "Hyperbolic hurt — she wants to feel chosen during tournament season.",
+    riskLevel: "high",
+    lowestRiskReply: "It doesn't. I got obsessive — tell me what you need this week.",
+    tinyWholesomeNudge: "Don't litigate the metaphor. Rebalance the calendar.",
+    category: "relationship",
+  },
+  {
+    pattern: "it's just a football match",
+    headline: "🎮 De-escalate Button",
+    comicTranslation:
+      "She's trying to downgrade the boss fight. You may be treating a group stage like a finale.",
+    possibleActualMeaning:
+      "She may want perspective — match importance is real to you, but so is her bandwidth.",
+    riskLevel: "medium",
+    lowestRiskReply: "Fair point — I'll dial it back. What would feel fair tonight?",
+    tinyWholesomeNudge: "Not every fixture needs full cinematic mode.",
+    category: "relationship",
+  },
+  {
+    pattern: "don't be late because of extra time",
+    headline: "⏱️ Overtime Warning",
+    comicTranslation:
+      "She already factored in injury time and still set a curfew. Respect the timer.",
+    possibleActualMeaning:
+      "She may have another commitment after — she wants a real ETA, not 'maybe penalties'.",
+    riskLevel: "medium",
+    lowestRiskReply: "Got it — if it's tight I'll leave at 90 or text you live.",
+    tinyWholesomeNudge: "Treat her deadline like a hard quest objective.",
+    category: "plans",
+  },
+  {
+    pattern: "you were up all night for the world cup",
+    headline: "🌙 Tournament Hangover",
+    comicTranslation:
+      "Full raid clear. Zero sleep. She's reading the debuff on tomorrow's relationship stats.",
+    possibleActualMeaning:
+      "All-nighters during knockouts can spill into grumpiness — she may want acknowledgment today.",
+    riskLevel: "medium",
+    lowestRiskReply: "Yeah — I was wiped. Sorry if I was useless today.",
+    tinyWholesomeNudge: "Repair with rest and one kind gesture, not match recap.",
+    category: "relationship",
+  },
+  {
+    pattern: "have fun with your friends then",
+    headline: "🚪 Passive Exit",
+    comicTranslation:
+      "She's logging off hurt. Translation: she wanted you, not the pub squad.",
+    possibleActualMeaning:
+      "Often said after lateness or cancelled plans — she may still want you to fight for the evening.",
+    riskLevel: "high",
+    lowestRiskReply: "I'd rather be with you — can we still salvage tonight?",
+    tinyWholesomeNudge: "Don't take the sarcasm as permission to disappear.",
+    category: "relationship",
+  },
   {
     pattern: "just be honest",
     headline: "🎯 Truth Check",

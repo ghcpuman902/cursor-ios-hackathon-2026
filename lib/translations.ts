@@ -28,6 +28,8 @@ export const SAMPLE_PHRASES = [
   "You should've reminded me",
   "It's not that deep",
   "Family stuff",
+  "The match kicks off at 1am",
+  "Meeting the lads for the match",
 ] as const
 
 export const FEMALE_SAMPLE_PHRASES = SAMPLE_PHRASES
