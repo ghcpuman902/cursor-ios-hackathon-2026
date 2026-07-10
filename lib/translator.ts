@@ -1,39 +1,55 @@
 import {
-  FALLBACK_TRANSLATIONS,
-  FEMALE_FALLBACK_TRANSLATIONS,
+  FALLBACK_ENTRIES,
+  FEMALE_FALLBACK_ENTRIES,
   FEMALE_LOADING_MESSAGES,
-  FEMALE_LONG_INPUT_TRANSLATIONS,
+  FEMALE_LONG_INPUT_ENTRIES,
   FEMALE_TRANSLATIONS,
   GRUNT_ANNOTATIONS,
   LOADING_MESSAGES,
   MALE_TRANSLATIONS,
-  type TranslationEntry,
-  type TranslationCategory,
 } from "@/lib/translations"
+import type {
+  RiskLevel,
+  TranslationCategory,
+  TranslationDirection,
+  TranslationEntry,
+} from "@/lib/translation-types"
 
 export type TranslatorGender = "male" | "female"
 
 export type TranslationOptions = {
   sarcasmLevel: number
   gruntMode: boolean
+  /** Optional context tags for light heuristics */
+  contextTags?: string[]
 }
 
 export type TranslationResult = {
   input: string
+  direction: TranslationDirection
+  headline: string
+  /** Primary comic line (also mirrored on `translation` for older callers) */
+  comicTranslation: string
   translation: string
+  possibleActualMeaning: string
+  riskLevel: RiskLevel
+  lowestRiskReply: string
+  tinyWholesomeNudge: string
   category: TranslationCategory | "mystery"
+  /** Kept as playful fake certainty for UI continuity; prefer riskLevel */
   confidence: number
   matchedPattern?: string
   isFallback: boolean
   source: "dictionary" | "ai"
-  /** Optional AI-written supplemental analysis shown under the translation */
+  /** Optional AI-written supplemental footnote */
   aiInsight?: string
 }
 
 type TranslationDictionary = {
+  direction: TranslationDirection
   entries: readonly TranslationEntry[]
-  fallbackTranslations: readonly string[]
-  emptyTranslation: string
+  fallbackEntries: readonly TranslationEntry[]
+  emptyEntry: TranslationEntry
 }
 
 const normalizeInput = (text: string): string => {
@@ -50,12 +66,140 @@ const countWords = (text: string): number => {
   return trimmed.split(/\s+/).length
 }
 
-/** She talked forever — decode to 1–3 words max */
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+/**
+ * Short patterns ("k", "lol", "ok") must not substring-match every sentence
+ * that happens to contain those letters. Longer phrases still use includes().
+ */
+const matchesPattern = (normalized: string, pattern: string): boolean => {
+  if (!pattern) return false
+  if (normalized === pattern) return true
+  if (pattern.length <= 3) {
+    const token = escapeRegExp(pattern)
+    return new RegExp(
+      `(?:^|[\\s.,!?;:'"(\\-])${token}(?:$|[\\s.,!?;:'")\\-])`
+    ).test(normalized)
+  }
+  return normalized.includes(pattern)
+}
+
 const FEMALE_LONG_INPUT_WORD_THRESHOLD = 12
 
-const maybeAddGrunt = (text: string, gruntMode: boolean): string => {
+const maybeAddMysticalSparkle = (text: string, gruntMode: boolean): string => {
   if (!gruntMode) return text
   return text + pickRandom(GRUNT_ANNOTATIONS)
+}
+
+const riskConfidence = (risk: RiskLevel, sarcasmLevel: number): number => {
+  const base = risk === "low" ? 118 : risk === "medium" ? 142 : 168
+  return base + Math.min(sarcasmLevel, 10)
+}
+
+const heuristicExtras = (
+  input: string,
+  tags: string[] | undefined,
+  direction: TranslationDirection
+): string[] => {
+  const extras: string[] = []
+  const normalized = normalizeInput(input)
+  const wordCount = countWords(input)
+  const tagSet = new Set((tags ?? []).map((t) => t.toLowerCase()))
+
+  const foodish =
+    tagSet.has("hungry") ||
+    tagSet.has("pre_lunch") ||
+    tagSet.has("pre_dinner") ||
+    tagSet.has("late_night")
+
+  if (foodish) {
+    extras.push("Food may solve 40% of this plot.")
+  }
+
+  if (wordCount > 0 && wordCount <= 2) {
+    extras.push("Do not infer full emotional novel from two characters.")
+  }
+
+  if (
+    normalized.includes("what do you want me to do") ||
+    normalized.includes("what do you want from me")
+  ) {
+    extras.push("Likely literal request for clear action.")
+  }
+
+  if (
+    /\bfine\b/.test(normalized) ||
+    /\bnothing\b/.test(normalized)
+  ) {
+    extras.push("Treat as unresolved until context confirms otherwise.")
+  }
+
+  if (/\bsorry\b/.test(normalized) && direction === "male_to_female") {
+    extras.push("May be sincere but under-elaborated.")
+  }
+
+  if (wordCount >= 40) {
+    extras.push("Recommend pause before replying.")
+  }
+
+  return extras
+}
+
+const applyHeuristics = (
+  nudge: string,
+  input: string,
+  tags: string[] | undefined,
+  direction: TranslationDirection
+): string => {
+  const extras = heuristicExtras(input, tags, direction)
+  if (extras.length === 0) return nudge
+  const unique = extras.filter((extra) => !nudge.includes(extra))
+  if (unique.length === 0) return nudge
+  return `${nudge} ${unique[0]}`
+}
+
+const entryToResult = (
+  input: string,
+  entry: TranslationEntry,
+  options: TranslationOptions,
+  direction: TranslationDirection,
+  matchedPattern: string | undefined,
+  isFallback: boolean
+): TranslationResult => {
+  const useSpicy =
+    options.sarcasmLevel >= 8 && entry.spicyComicTranslation !== undefined
+  const comicBase = useSpicy
+    ? entry.spicyComicTranslation!
+    : entry.comicTranslation
+  const comicTranslation =
+    direction === "male_to_female"
+      ? maybeAddMysticalSparkle(comicBase, options.gruntMode)
+      : comicBase
+
+  const tinyWholesomeNudge = applyHeuristics(
+    entry.tinyWholesomeNudge,
+    input,
+    options.contextTags,
+    direction
+  )
+
+  return {
+    input,
+    direction,
+    headline: entry.headline,
+    comicTranslation,
+    translation: comicTranslation,
+    possibleActualMeaning: entry.possibleActualMeaning,
+    riskLevel: entry.riskLevel,
+    lowestRiskReply: entry.lowestRiskReply,
+    tinyWholesomeNudge,
+    category: entry.category,
+    confidence: riskConfidence(entry.riskLevel, options.sarcasmLevel),
+    matchedPattern,
+    isFallback,
+    source: "dictionary",
+  }
 }
 
 const translateFromDictionary = (
@@ -66,49 +210,39 @@ const translateFromDictionary = (
   const normalized = normalizeInput(input)
 
   if (!normalized) {
-    return {
+    return entryToResult(
       input,
-      translation: dictionary.emptyTranslation,
-      category: "mystery",
-      confidence: 108,
-      isFallback: true,
-      source: "dictionary",
-    }
+      dictionary.emptyEntry,
+      options,
+      dictionary.direction,
+      undefined,
+      true
+    )
   }
 
-  const match = dictionary.entries.find((entry) => {
-    const pattern = entry.pattern.toLowerCase()
-    return normalized === pattern || normalized.includes(pattern)
-  })
+  const match = dictionary.entries.find((entry) =>
+    matchesPattern(normalized, entry.pattern.toLowerCase())
+  )
 
   if (match) {
-    const useSpicy =
-      options.sarcasmLevel >= 8 && match.spicyTranslation !== undefined
-    const base = useSpicy ? match.spicyTranslation! : match.translation
-    const confidenceBoost = Math.min(options.sarcasmLevel * 2, 20)
-
-    return {
+    return entryToResult(
       input,
-      translation: maybeAddGrunt(base, options.gruntMode),
-      category: match.category,
-      confidence: match.confidence + confidenceBoost,
-      matchedPattern: match.pattern,
-      isFallback: false,
-      source: "dictionary",
-    }
+      match,
+      options,
+      dictionary.direction,
+      match.pattern,
+      false
+    )
   }
 
-  return {
+  return entryToResult(
     input,
-    translation: maybeAddGrunt(
-      pickRandom(dictionary.fallbackTranslations),
-      options.gruntMode
-    ),
-    category: "mystery",
-    confidence: 101 + options.sarcasmLevel,
-    isFallback: true,
-    source: "dictionary",
-  }
+    pickRandom(dictionary.fallbackEntries),
+    options,
+    dictionary.direction,
+    undefined,
+    true
+  )
 }
 
 export const getRandomLoadingMessage = (): string => {
@@ -119,18 +253,44 @@ export const getRandomFemaleLoadingMessage = (): string => {
   return pickRandom(FEMALE_LOADING_MESSAGES)
 }
 
+const MALE_EMPTY: TranslationEntry = {
+  pattern: "",
+  headline: "🤫 Silence Spread",
+  comicTranslation:
+    "… *[silence]* … He said nothing. This may also be a tiny omen.",
+  possibleActualMeaning:
+    "Silence can mean many soft things. Do not assume the worst novel.",
+  riskLevel: "low",
+  lowestRiskReply: "Hey — you still there?",
+  tinyWholesomeNudge: "One gentle ping. Then wait.",
+  category: "classic",
+}
+
+const FEMALE_EMPTY: TranslationEntry = {
+  pattern: "",
+  headline: "…",
+  comicTranslation: "…",
+  possibleActualMeaning: "Empty input. No quest yet.",
+  riskLevel: "low",
+  lowestRiskReply: "?",
+  tinyWholesomeNudge: "Wait for a message before theorising.",
+  category: "classic",
+}
+
+/** Explain what HE said to a female-coded receiver (astrology / tarot voice). */
 export const translateMale = (
   input: string,
   options: TranslationOptions
 ): TranslationResult => {
   return translateFromDictionary(input, options, {
+    direction: "male_to_female",
     entries: MALE_TRANSLATIONS,
-    fallbackTranslations: FALLBACK_TRANSLATIONS,
-    emptyTranslation:
-      "… *[silence]* … (He said nothing. This is also a statement.)",
+    fallbackEntries: FALLBACK_ENTRIES,
+    emptyEntry: MALE_EMPTY,
   })
 }
 
+/** Explain what SHE said to a male-coded receiver (quests / memes voice). */
 export const translateFemale = (
   input: string,
   options: TranslationOptions
@@ -138,25 +298,19 @@ export const translateFemale = (
   const wordCount = countWords(input)
   const isLongInput = wordCount >= FEMALE_LONG_INPUT_WORD_THRESHOLD
   const fallbackPool = isLongInput
-    ? FEMALE_LONG_INPUT_TRANSLATIONS
-    : FEMALE_FALLBACK_TRANSLATIONS
+    ? FEMALE_LONG_INPUT_ENTRIES
+    : FEMALE_FALLBACK_ENTRIES
 
-  const result = translateFromDictionary(
+  return translateFromDictionary(
     input,
     { ...options, gruntMode: false },
     {
+      direction: "female_to_male",
       entries: FEMALE_TRANSLATIONS,
-      fallbackTranslations: fallbackPool,
-      emptyTranslation: "…",
+      fallbackEntries: fallbackPool,
+      emptyEntry: FEMALE_EMPTY,
     }
   )
-
-  if (result.isFallback && isLongInput) {
-    return {
-      ...result,
-      confidence: Math.min(220, 140 + Math.floor(wordCount / 3)),
-    }
-  }
-
-  return result
 }
+
+export type { TranslationDirection, RiskLevel }

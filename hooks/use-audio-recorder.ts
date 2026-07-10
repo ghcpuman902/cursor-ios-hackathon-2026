@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import {
+  getAudioCaptureSupport,
+  getSupportedAudioMimeType,
+  type AudioCaptureBlockReason,
+} from "@/lib/audio-capture-support"
+
 type AudioRecorderStatus = "idle" | "recording" | "processing"
 
 type UseAudioRecorderOptions = {
@@ -16,23 +22,11 @@ type UseAudioRecorderReturn = {
   startRecording: () => Promise<void>
   stopRecording: () => void
   isSupported: boolean
+  unsupportedReason: AudioCaptureBlockReason | null
 }
 
 const LIVE_BAR_COUNT = 40
 const MAX_HISTORY = 80
-
-const getSupportedMimeType = () => {
-  if (typeof MediaRecorder === "undefined") return ""
-
-  const candidates = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/mp4",
-    "audio/ogg;codecs=opus",
-  ]
-
-  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? ""
-}
 
 function createIdleLevels(): number[] {
   return Array.from({ length: LIVE_BAR_COUNT }, () => 0.12)
@@ -62,10 +56,15 @@ export const useAudioRecorder = ({
   const startedAtRef = useRef<number | null>(null)
   const lastSampleAtRef = useRef(0)
 
-  const isSupported =
-    typeof navigator !== "undefined" &&
-    !!navigator.mediaDevices?.getUserMedia &&
-    typeof MediaRecorder !== "undefined"
+  const [isSupported, setIsSupported] = useState(true)
+  const [unsupportedReason, setUnsupportedReason] =
+    useState<AudioCaptureBlockReason | null>(null)
+
+  useEffect(() => {
+    const support = getAudioCaptureSupport()
+    setIsSupported(support.isSupported)
+    setUnsupportedReason(support.blockReason)
+  }, [])
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -162,7 +161,7 @@ export const useAudioRecorder = ({
     mediaStreamRef.current = stream
     startAnalyser(stream)
 
-    const mimeType = getSupportedMimeType()
+    const mimeType = getSupportedAudioMimeType()
     const recorder = mimeType
       ? new MediaRecorder(stream, { mimeType })
       : new MediaRecorder(stream)
@@ -248,5 +247,6 @@ export const useAudioRecorder = ({
     startRecording,
     stopRecording,
     isSupported,
+    unsupportedReason,
   }
 }

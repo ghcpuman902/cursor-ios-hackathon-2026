@@ -1,0 +1,214 @@
+[    5356ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5484ms] [LOG] [chainInfo.ts] Chain registry initialized: {networkMode: testnet, supportedChains: Array(4), timestamp: 2026-07-10T09:12:33.392Z} @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5484ms] [LOG] 🔗 [chains.ts] Module loaded with configuration: {VITE_APP_ENV: development, VITE_FORCE_PROD_CHAINS: false, localStorage_override: null, networkMode: testnet, chainsSelected: TESTNET_CHAINS} @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5489ms] [LOG] SecureStorage: Retrieving item: authToken @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5489ms] [LOG] SecureStorage: No data found for key: authToken @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5599ms] [WARNING] Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information. @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5718ms] [LOG] / @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    5790ms] [LOG] /buy @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    6980ms] [ERROR] Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?%s%s 
+
+Check the render method of `Primitive.div.SlotClone`. 
+    at DialogOverlay (http://localhost:3000/src/components/ui/dialog.tsx:68:3)
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:275:22
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at DialogPortal (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:219:11)
+    at DialogPortal (http://localhost:3000/src/components/ui/dialog.tsx:48:6)
+    at DialogContent (http://localhost:3000/src/components/ui/dialog.tsx:93:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at Dialog (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:159:5)
+    at Dialog (http://localhost:3000/src/components/ui/dialog.tsx:28:6)
+    at GeoGuard (http://localhost:3000/src/components/LayoutAndProviders/GeoGuard.tsx:36:3)
+    at div
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at SidebarProvider (http://localhost:3000/src/components/ui/sidebar.tsx:58:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at ThemeProvider (http://localhost:3000/src/components/LayoutAndProviders/ThemeProvider.tsx:32:3)
+    at Layout2 (http://localhost:3000/src/components/LayoutAndProviders/Layout.tsx:93:3)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6042:26)
+    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6836:3)
+    at ComponentErrorBoundary (http://localhost:3000/src/components/LayoutAndProviders/ErrorBoundary.tsx:31:5)
+    at App
+    at PreloadRoutesProvider (http://localhost:3000/src/components/LayoutAndProviders/PreloadRoutesProvider.tsx:25:41)
+    at QueryClientProvider (http://localhost:3000/node_modules/.vite/deps/chunk-TK6E45MX.js?v=891015ee:3127:3)
+    at PersistQueryClientProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:376:3)
+    at Hydrate (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:392:11)
+    at WagmiProvider (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:414:11)
+    at WalletProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:2739:3)
+    at Web3Provider (http://localhost:3000/src/components/LayoutAndProviders/Web3Provider.tsx:57:32)
+    at AppStateProvider (http://localhost:3000/src/components/LayoutAndProviders/AppStateProvider.tsx:28:36)
+    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6779:13)
+    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:9899:3)
+    at _a (http://localhost:3000/node_modules/.vite/deps/react-helmet-async.js?v=ba50ddc7:637:5) @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    6983ms] [ERROR] Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?%s%s 
+
+Check the render method of `GeoGuard`. 
+    at DialogDescription (http://localhost:3000/src/components/ui/dialog.tsx:224:3)
+    at div
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:75:7
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-CJSFP5LP.js?v=891015ee:48:5
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:343:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:266:58
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:257:64
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:275:22
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at DialogPortal (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:219:11)
+    at DialogPortal (http://localhost:3000/src/components/ui/dialog.tsx:48:6)
+    at DialogContent (http://localhost:3000/src/components/ui/dialog.tsx:93:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at Dialog (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:159:5)
+    at Dialog (http://localhost:3000/src/components/ui/dialog.tsx:28:6)
+    at GeoGuard (http://localhost:3000/src/components/LayoutAndProviders/GeoGuard.tsx:36:3)
+    at div
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at SidebarProvider (http://localhost:3000/src/components/ui/sidebar.tsx:58:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at ThemeProvider (http://localhost:3000/src/components/LayoutAndProviders/ThemeProvider.tsx:32:3)
+    at Layout2 (http://localhost:3000/src/components/LayoutAndProviders/Layout.tsx:93:3)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6042:26)
+    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6836:3)
+    at ComponentErrorBoundary (http://localhost:3000/src/components/LayoutAndProviders/ErrorBoundary.tsx:31:5)
+    at App
+    at PreloadRoutesProvider (http://localhost:3000/src/components/LayoutAndProviders/PreloadRoutesProvider.tsx:25:41)
+    at QueryClientProvider (http://localhost:3000/node_modules/.vite/deps/chunk-TK6E45MX.js?v=891015ee:3127:3)
+    at PersistQueryClientProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:376:3)
+    at Hydrate (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:392:11)
+    at WagmiProvider (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:414:11)
+    at WalletProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:2739:3)
+    at Web3Provider (http://localhost:3000/src/components/LayoutAndProviders/Web3Provider.tsx:57:32)
+    at AppStateProvider (http://localhost:3000/src/components/LayoutAndProviders/AppStateProvider.tsx:28:36)
+    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6779:13)
+    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:9899:3)
+    at _a (http://localhost:3000/node_modules/.vite/deps/react-helmet-async.js?v=ba50ddc7:637:5) @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    6984ms] [ERROR] Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <p> p 
+    at p
+    at div
+    at p
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:391:13
+    at DialogDescription (http://localhost:3000/src/components/ui/dialog.tsx:224:3)
+    at div
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:75:7
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-CJSFP5LP.js?v=891015ee:48:5
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:343:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:266:58
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:257:64
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:275:22
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at DialogPortal (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:219:11)
+    at DialogPortal (http://localhost:3000/src/components/ui/dialog.tsx:48:6)
+    at DialogContent (http://localhost:3000/src/components/ui/dialog.tsx:93:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at Dialog (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:159:5)
+    at Dialog (http://localhost:3000/src/components/ui/dialog.tsx:28:6)
+    at GeoGuard (http://localhost:3000/src/components/LayoutAndProviders/GeoGuard.tsx:36:3)
+    at div
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at SidebarProvider (http://localhost:3000/src/components/ui/sidebar.tsx:58:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at ThemeProvider (http://localhost:3000/src/components/LayoutAndProviders/ThemeProvider.tsx:32:3)
+    at Layout2 (http://localhost:3000/src/components/LayoutAndProviders/Layout.tsx:93:3)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6042:26)
+    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6836:3)
+    at ComponentErrorBoundary (http://localhost:3000/src/components/LayoutAndProviders/ErrorBoundary.tsx:31:5)
+    at App
+    at PreloadRoutesProvider (http://localhost:3000/src/components/LayoutAndProviders/PreloadRoutesProvider.tsx:25:41)
+    at QueryClientProvider (http://localhost:3000/node_modules/.vite/deps/chunk-TK6E45MX.js?v=891015ee:3127:3)
+    at PersistQueryClientProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:376:3)
+    at Hydrate (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:392:11)
+    at WagmiProvider (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:414:11)
+    at WalletProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:2739:3)
+    at Web3Provider (http://localhost:3000/src/components/LayoutAndProviders/Web3Provider.tsx:57:32)
+    at AppStateProvider (http://localhost:3000/src/components/LayoutAndProviders/AppStateProvider.tsx:28:36)
+    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6779:13)
+    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:9899:3)
+    at _a (http://localhost:3000/node_modules/.vite/deps/react-helmet-async.js?v=ba50ddc7:637:5) @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369
+[    6984ms] [ERROR] Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <div> p 
+    at div
+    at p
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:391:13
+    at DialogDescription (http://localhost:3000/src/components/ui/dialog.tsx:224:3)
+    at div
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:75:7
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-CJSFP5LP.js?v=891015ee:48:5
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:343:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:266:58
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:257:64
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:254:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:231:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:344:13
+    at http://localhost:3000/node_modules/.vite/deps/chunk-VTR2XC6A.js?v=891015ee:275:22
+    at Presence (http://localhost:3000/node_modules/.vite/deps/chunk-Y6BDWKM5.js?v=891015ee:37:11)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at DialogPortal (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:219:11)
+    at DialogPortal (http://localhost:3000/src/components/ui/dialog.tsx:48:6)
+    at DialogContent (http://localhost:3000/src/components/ui/dialog.tsx:93:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at Dialog (http://localhost:3000/node_modules/.vite/deps/chunk-6A6UAJLM.js?v=891015ee:159:5)
+    at Dialog (http://localhost:3000/src/components/ui/dialog.tsx:28:6)
+    at GeoGuard (http://localhost:3000/src/components/LayoutAndProviders/GeoGuard.tsx:36:3)
+    at div
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at SidebarProvider (http://localhost:3000/src/components/ui/sidebar.tsx:58:3)
+    at Provider (http://localhost:3000/node_modules/.vite/deps/chunk-7XG2C3M2.js?v=891015ee:57:15)
+    at TooltipProvider (http://localhost:3000/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9bf22f62:171:5)
+    at TooltipProvider (http://localhost:3000/src/components/ui/tooltip.tsx:27:3)
+    at ThemeProvider (http://localhost:3000/src/components/LayoutAndProviders/ThemeProvider.tsx:32:3)
+    at Layout2 (http://localhost:3000/src/components/LayoutAndProviders/Layout.tsx:93:3)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6042:26)
+    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6836:3)
+    at ComponentErrorBoundary (http://localhost:3000/src/components/LayoutAndProviders/ErrorBoundary.tsx:31:5)
+    at App
+    at PreloadRoutesProvider (http://localhost:3000/src/components/LayoutAndProviders/PreloadRoutesProvider.tsx:25:41)
+    at QueryClientProvider (http://localhost:3000/node_modules/.vite/deps/chunk-TK6E45MX.js?v=891015ee:3127:3)
+    at PersistQueryClientProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:376:3)
+    at Hydrate (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:392:11)
+    at WagmiProvider (http://localhost:3000/node_modules/.vite/deps/chunk-OJH3AL5G.js?v=891015ee:414:11)
+    at WalletProvider (http://localhost:3000/node_modules/.vite/deps/@gaib-ai_wallet-connector.js?v=a3162e5a:2739:3)
+    at Web3Provider (http://localhost:3000/src/components/LayoutAndProviders/Web3Provider.tsx:57:32)
+    at AppStateProvider (http://localhost:3000/src/components/LayoutAndProviders/AppStateProvider.tsx:28:36)
+    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:6779:13)
+    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=ddb722b7:9899:3)
+    at _a (http://localhost:3000/node_modules/.vite/deps/react-helmet-async.js?v=ba50ddc7:637:5) @ http://localhost:3000/node_modules/.vite/deps/@sentry_react.js?v=135df039:7369

@@ -23,6 +23,11 @@ import {
 import { toast } from "sonner"
 
 import { GlassPanel } from "@/components/glass-panel"
+import {
+  SlidingTabs,
+  SlidingTabsBar,
+  type SlidingTabItem,
+} from "@/components/sliding-tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,7 +36,7 @@ import { useAudioRecorder } from "@/hooks/use-audio-recorder"
 import {
   SAMPLE_PHRASES,
   FEMALE_SAMPLE_PHRASES,
-  CATEGORY_LABELS,
+  RISK_LABELS,
 } from "@/lib/translations"
 import {
   getRandomLoadingMessage,
@@ -41,33 +46,36 @@ import {
   type TranslationResult,
   type TranslatorGender,
 } from "@/lib/translator"
+import { getSecureMicUrl } from "@/lib/audio-capture-support"
 import { cn } from "@/lib/utils"
 
 const GENDER_CONFIG = {
   male: {
-    appName: "Male Translator™",
-    tagline: "Decoding grunts, shrugs, and three-word texts since forever",
+    appName: "Male → Female",
+    tagline: "His short texts, translated into cosy horoscope energy",
     subjectLabel: "He said",
+    resultLabel: "For you (her read)",
     typeLabel: "Type what he said",
-    typePlaceholder: `e.g. "I'm fine", "k", "do whatever you want"`,
+    typePlaceholder: `e.g. "ok", "sorry", "I'm busy"`,
     recordPrompt: "Record what he actually said",
-    idleHint: "Tap record. Grunts, mumbles, and one-word texts all count.",
-    emptyToastTitle: "He said nothing. That's also data.",
-    transcribeLoading: "Decoding grunt frequencies…",
-    transcribeError: "Could not decode that grunt.",
+    idleHint: "Comedy-first decode. Pause before the cathedral of meaning.",
+    emptyToastTitle: "He said nothing. Tiny omen: silence.",
+    transcribeLoading: "Reading the soft weather…",
+    transcribeError: "Could not read that omen.",
     samplePhrases: SAMPLE_PHRASES,
   },
   female: {
-    appName: "Female Translator™",
-    tagline: "She talked for twenty minutes. Here's the headline.",
+    appName: "Female → Male",
+    tagline: "Her subtext, translated into quest markers and bro tips",
     subjectLabel: "She said",
+    resultLabel: "For you (his read)",
     typeLabel: "Type what she said",
-    typePlaceholder: `Paste the paragraph. Get 1–3 words back.`,
-    recordPrompt: "Record the full monologue",
-    idleHint: "The longer she talks, the shorter the translation.",
-    emptyToastTitle: "She said nothing. Suspicious.",
-    transcribeLoading: "Condensing the monologue…",
-    transcribeError: "Could not transcribe that.",
+    typePlaceholder: `e.g. "I'm fine", "Nothing", "You should know"`,
+    recordPrompt: "Record what she said",
+    idleHint: "Joke first. Lowest-risk reply second. No therapy mode.",
+    emptyToastTitle: "She said nothing. Suspicious side quest?",
+    transcribeLoading: "Scanning for quest markers…",
+    transcribeError: "Could not decode that quest.",
     samplePhrases: FEMALE_SAMPLE_PHRASES,
   },
 } as const
@@ -82,94 +90,143 @@ type MaleTranslatorProps = {
 
 type ViewMode = "voice" | "type" | "screenshot"
 
+const INPUT_MODE_TABS: SlidingTabItem[] = [
+  { value: "voice", label: "Voice", icon: Mic },
+  { value: "type", label: "Type", icon: Keyboard },
+  { value: "screenshot", label: "Screenshot", icon: ImageUp },
+]
+
+type BackgroundBlob = {
+  className: string
+  colorClass: string
+  drift: { x: number[]; y: number[] }
+  cycleDuration: number
+}
+
+// Male: deep slow drift (~1.6–3.3 breaths/min). Female: calm but slightly livelier (~2.5–5 breaths/min).
+const MALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
+  {
+    className: "absolute -top-32 -left-28 size-[28rem]",
+    colorClass: "gender-blob-male-blue",
+    drift: {
+      x: [0, 28, 10, -18, 0],
+      y: [0, 18, 34, 12, 0],
+    },
+    cycleDuration: 18,
+  },
+  {
+    className: "absolute top-[22%] -right-36 size-[32rem]",
+    colorClass: "gender-blob-male-cyan",
+    drift: {
+      x: [0, -34, 8, 16, 0],
+      y: [0, 24, -14, 8, 0],
+    },
+    cycleDuration: 24,
+  },
+  {
+    className: "absolute -bottom-44 left-[12%] size-[34rem]",
+    colorClass: "gender-blob-male-indigo",
+    drift: {
+      x: [0, 36, -12, -24, 0],
+      y: [0, -20, 8, 16, 0],
+    },
+    cycleDuration: 30,
+  },
+  {
+    className: "absolute top-[58%] right-[8%] size-56",
+    colorClass: "gender-blob-male-red",
+    drift: {
+      x: [0, -14, 12, -6, 0],
+      y: [0, -10, 14, 4, 0],
+    },
+    cycleDuration: 38,
+  },
+]
+
+const FEMALE_BACKGROUND_BLOBS: BackgroundBlob[] = [
+  {
+    className: "absolute -top-28 -left-24 size-[30rem]",
+    colorClass: "gender-blob-female-soft-pink",
+    drift: {
+      x: [0, 32, 8, -22, 0],
+      y: [0, 20, 38, 12, 0],
+    },
+    cycleDuration: 12,
+  },
+  {
+    className: "absolute top-[26%] -right-32 size-[30rem]",
+    colorClass: "gender-blob-female-fuchsia",
+    drift: {
+      x: [0, -40, 10, 22, 0],
+      y: [0, 28, -16, 8, 0],
+    },
+    cycleDuration: 15,
+  },
+  {
+    className: "absolute -bottom-40 left-[20%] size-[32rem]",
+    colorClass: "gender-blob-female-hot-pink",
+    drift: {
+      x: [0, 42, -18, -26, 0],
+      y: [0, -22, 8, 16, 0],
+    },
+    cycleDuration: 19,
+  },
+  {
+    className: "absolute top-[12%] left-[42%] size-48",
+    colorClass: "gender-blob-female-magenta",
+    drift: {
+      x: [0, 16, -18, 4, 0],
+      y: [0, 12, -10, 6, 0],
+    },
+    cycleDuration: 24,
+  },
+]
+
 function DynamicGenderBackground({ gender }: { gender: TranslatorGender }) {
   const reduceMotion = useReducedMotion()
-  const isMale = gender === "male"
+  const blobs =
+    gender === "male" ? MALE_BACKGROUND_BLOBS : FEMALE_BACKGROUND_BLOBS
 
   return (
-    <>
-      <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[var(--app-shell)]"
-        aria-hidden
-      >
-        <AnimatePresence mode="sync">
-          <motion.div
-            key={gender}
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.7 }}
-          >
+    <div
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      aria-hidden
+    >
+      <AnimatePresence mode="sync">
+        <motion.div
+          key={gender}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.7 }}
+        >
+          {blobs.map((blob, index) => (
             <motion.div
+              key={`${gender}-${index}`}
               className={cn(
-                "absolute -top-28 -left-24 size-96 rounded-full blur-[90px]",
-                isMale ? "bg-blue-500/30" : "bg-fuchsia-500/28"
+                "rounded-full blur-[130px]",
+                blob.className,
+                blob.colorClass
               )}
               animate={
                 reduceMotion
                   ? undefined
                   : {
-                      x: [0, 34, -12, 0],
-                      y: [0, 22, 48, 0],
-                      scale: [1, 1.08, 0.96, 1],
+                      x: blob.drift.x,
+                      y: blob.drift.y,
                     }
               }
               transition={{
-                duration: 14,
+                duration: blob.cycleDuration,
                 repeat: Infinity,
-                ease: "easeInOut",
+                ease: [0.42, 0, 0.58, 1],
               }}
             />
-            <motion.div
-              className={cn(
-                "absolute top-[28%] -right-32 size-[28rem] rounded-full blur-[110px]",
-                isMale ? "bg-cyan-400/22" : "bg-rose-400/24"
-              )}
-              animate={
-                reduceMotion
-                  ? undefined
-                  : {
-                      x: [0, -46, 10, 0],
-                      y: [0, 42, -18, 0],
-                      scale: [1, 0.94, 1.07, 1],
-                    }
-              }
-              transition={{
-                duration: 17,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className={cn(
-                "absolute -bottom-40 left-[18%] size-[30rem] rounded-full blur-[120px]",
-                isMale ? "bg-violet-500/24" : "bg-amber-400/18"
-              )}
-              animate={
-                reduceMotion
-                  ? undefined
-                  : { x: [0, 54, -24, 0], y: [0, -28, 8, 0] }
-              }
-              transition={{
-                duration: 19,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-[1] h-2 bg-[var(--app-shell)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-2 bg-[var(--app-shell)]"
-        aria-hidden
-      />
-    </>
+          ))}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -184,8 +241,7 @@ export function MaleTranslator({
   const genderConfig = GENDER_CONFIG[gender]
   const appName =
     gender === "male" && appNameProp ? appNameProp : genderConfig.appName
-  const tagline =
-    gender === "male" && taglineProp ? taglineProp : genderConfig.tagline
+  void taglineProp
 
   const [viewMode, setViewMode] = useState<ViewMode>("voice")
   const [input, setInput] = useState("")
@@ -348,6 +404,7 @@ export function MaleTranslator({
     startRecording,
     stopRecording,
     isSupported: isMicSupported,
+    unsupportedReason: micUnsupportedReason,
   } = useAudioRecorder({
     onRecordingComplete: handleRecordingComplete,
   })
@@ -366,7 +423,10 @@ export function MaleTranslator({
       await startRecording()
     } catch {
       toast.error("Microphone access denied.", {
-        description: "Allow mic access to record a voice note.",
+        description:
+          micUnsupportedReason === "insecure-context"
+            ? "Open the HTTPS LAN URL from pnpm dev:lan, then allow mic access."
+            : "Allow mic access to record a voice note.",
       })
     }
   }
@@ -513,7 +573,16 @@ export function MaleTranslator({
 
   const copyResult = async () => {
     if (!result) return
-    await navigator.clipboard.writeText(result.translation)
+    const block = [
+      result.headline,
+      result.comicTranslation,
+      "",
+      `Probably means: ${result.possibleActualMeaning}`,
+      `Risk: ${result.riskLevel}`,
+      `Lowest-risk reply: ${result.lowestRiskReply}`,
+      `Nudge: ${result.tinyWholesomeNudge}`,
+    ].join("\n")
+    await navigator.clipboard.writeText(block)
     toast.success("Copied!")
   }
 
@@ -527,14 +596,14 @@ export function MaleTranslator({
     clearScreenshot()
   }
 
-  const sarcasmLabel =
-    sarcasmLevel <= 3
-      ? "Gentle"
-      : sarcasmLevel <= 6
-        ? "Honest"
-        : sarcasmLevel <= 8
-          ? "Spicy"
-          : "Nuclear"
+  // const sarcasmLabel =
+  //   sarcasmLevel <= 3
+  //     ? "Gentle"
+  //     : sarcasmLevel <= 6
+  //       ? "Honest"
+  //       : sarcasmLevel <= 8
+  //         ? "Spicy"
+  //         : "Nuclear"
 
   const isRecorderBusy =
     recorderStatus === "recording" || recorderStatus === "processing"
@@ -544,14 +613,14 @@ export function MaleTranslator({
     <>
       <DynamicGenderBackground gender={gender} />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col gap-6">
-        <header className="relative space-y-5 pt-12 text-center sm:pt-10">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col">
+        <header className="shrink-0 space-y-5 pt-4 text-center sm:pt-10">
           <div className="absolute top-0 right-0 flex items-center gap-2">
             <span className="text-[10px] font-medium tracking-wide text-white/45 uppercase">
               I&apos;m into
             </span>
             <div
-              className="flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
+              className="sliding-pill sliding-pill--glass relative flex rounded-full border border-white/12 bg-white/[0.07] p-0.5 shadow-sm backdrop-blur-xl"
               role="tablist"
               aria-label="Who I am into"
             >
@@ -560,17 +629,14 @@ export function MaleTranslator({
                   key={mode}
                   type="button"
                   role="tab"
+                  data-slot="pill-trigger"
+                  data-active={gender === mode ? "" : undefined}
                   aria-selected={gender === mode}
                   onClick={() => handleGenderChange(mode)}
                   disabled={isBusy}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[11px] font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:px-3",
-                    gender === mode
-                      ? "bg-white/16 text-white shadow-sm"
-                      : "text-white/45 hover:bg-white/8 hover:text-white/75"
-                  )}
+                  className="relative z-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
                 >
-                  {mode === "male" ? "Men" : "Women"}
+                  {mode === "male" ? "Him → You" : "Her → You"}
                 </button>
               ))}
             </div>
@@ -580,67 +646,47 @@ export function MaleTranslator({
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               {appName}
             </h1>
-            <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
+            {/* <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
               {tagline}
-            </p>
+            </p> */}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Badge className="rounded-full border-white/12 bg-white/[0.08] text-white/75 shadow-sm backdrop-blur-xl hover:bg-white/[0.08]">
+            {/* <Badge className="rounded-full border-white/12 bg-white/[0.08] text-white/75 shadow-sm backdrop-blur-xl hover:bg-white/[0.08]">
               Sarcasm {sarcasmLevel}/10 · {sarcasmLabel}
-            </Badge>
+            </Badge> */}
             {gruntMode && (
               <Badge
                 variant="outline"
                 className="rounded-full border-white/12 bg-white/[0.06] text-white/60 backdrop-blur-xl"
               >
-                Grunt mode
+                {gender === "male" ? "Extra sparkle" : "Spicy footnotes"}
               </Badge>
             )}
           </div>
         </header>
 
-        <div
-          className="grid grid-cols-3 rounded-full border border-white/12 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
-          role="tablist"
-          aria-label="Input method"
-        >
-          {(["voice", "type", "screenshot"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === mode}
-              onClick={() => setViewMode(mode)}
+        <div className="mt-6 shrink-0">
+          <SlidingTabs
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as ViewMode)}
+            className="gap-0"
+          >
+            <SlidingTabsBar
+              items={INPUT_MODE_TABS}
+              variant="glass"
               disabled={isRecorderBusy}
-              className={cn(
-                "flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50",
-                viewMode === mode
-                  ? "bg-white/16 text-white shadow-sm"
-                  : "text-white/45 hover:bg-white/[0.06] hover:text-white/75"
-              )}
-            >
-              {mode === "voice" ? (
-                <Mic className="size-4" aria-hidden />
-              ) : mode === "type" ? (
-                <Keyboard className="size-4" aria-hidden />
-              ) : (
-                <ImageUp className="size-4" aria-hidden />
-              )}
-              {mode === "voice"
-                ? "Voice"
-                : mode === "type"
-                  ? "Type"
-                  : "Screenshot"}
-            </button>
-          ))}
+              aria-label="Input method"
+            />
+          </SlidingTabs>
         </div>
 
-        <GlassPanel variant="strong" className="overflow-hidden">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={viewMode}
-              role="tabpanel"
+        <div className="mt-6 flex flex-col gap-6">
+          <GlassPanel variant="strong" className="min-h-[28rem] overflow-hidden">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={viewMode}
+                role="tabpanel"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
@@ -661,13 +707,34 @@ export function MaleTranslator({
                       onToggleRecording={() => void handleToggleRecording()}
                     />
                   ) : (
-                    <div className="px-5 py-10 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Voice notes need a mic-friendly browser.
-                      </p>
+                    <div className="space-y-4 px-5 py-10 text-center">
+                      {micUnsupportedReason === "insecure-context" ? (
+                        <>
+                          <p className="text-sm font-medium text-foreground/85">
+                            Microphone access needs HTTPS
+                          </p>
+                          <p className="mx-auto max-w-xs text-xs leading-relaxed text-muted-foreground">
+                            iOS blocks the mic on plain HTTP LAN URLs. On your
+                            Mac, run{" "}
+                            <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80">
+                              pnpm dev:lan
+                            </code>
+                            , then open{" "}
+                            <span className="font-medium text-foreground/80">
+                              {getSecureMicUrl()}
+                            </span>{" "}
+                            on your phone and allow the certificate warning.
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Voice notes need a mic-friendly browser. Try Safari on
+                          iOS 14.3+ or switch to typing.
+                        </p>
+                      )}
                       <Button
                         size="sm"
-                        className="mt-4 rounded-full"
+                        className="mt-2 rounded-full"
                         onClick={() => setViewMode("type")}
                       >
                         Switch to typing
@@ -816,9 +883,9 @@ export function MaleTranslator({
               )}
             </motion.div>
           </AnimatePresence>
-        </GlassPanel>
+          </GlassPanel>
 
-        <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait">
           {(isTranslating || recorderStatus === "processing") && (
             <motion.div
               key="loading"
@@ -861,27 +928,43 @@ export function MaleTranslator({
                 >
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                      Translation
+                      {genderConfig.resultLabel}
                     </p>
                     <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 text-[10px] text-secondary-foreground hover:bg-secondary">
-                      {result.category === "mystery"
-                        ? "🔮 Mystery"
-                        : CATEGORY_LABELS[result.category]}
-                    </Badge>
-                    <Badge className="h-5 rounded-full border-border/70 bg-secondary px-2 font-mono text-[10px] text-secondary-foreground hover:bg-secondary">
-                      {result.confidence}%
+                      {RISK_LABELS[result.riskLevel]}
                     </Badge>
                   </div>
 
-                  <p className="text-base leading-relaxed font-medium text-foreground">
-                    &ldquo;{result.translation}&rdquo;
+                  <p className="text-sm font-semibold text-foreground">
+                    {result.headline}
                   </p>
+                  <p className="mt-2 text-base leading-relaxed font-medium text-foreground">
+                    &ldquo;{result.comicTranslation}&rdquo;
+                  </p>
+
+                  <div className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm leading-relaxed text-foreground/80">
+                    <p>
+                      <span className="font-medium text-foreground/90">
+                        Today&apos;s theory:{" "}
+                      </span>
+                      {result.possibleActualMeaning}
+                    </p>
+                    <p>
+                      <span className="font-medium text-foreground/90">
+                        Lowest-risk reply:{" "}
+                      </span>
+                      {result.lowestRiskReply}
+                    </p>
+                    <p className="text-foreground/70">
+                      {result.tinyWholesomeNudge}
+                    </p>
+                  </div>
 
                   {result.aiInsight && (
                     <div className="mt-3 border-t border-white/10 pt-3">
                       <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                         <Sparkles className="size-3" aria-hidden />
-                        AI analysis
+                        Extra footnote
                       </p>
                       <p className="text-sm leading-relaxed text-foreground/80">
                         {result.aiInsight}
@@ -893,7 +976,7 @@ export function MaleTranslator({
                     <div className="mt-3 border-t border-white/10 pt-3">
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
                         <RefreshCw className="size-3.5 animate-spin" aria-hidden />
-                        Adding AI analysis…
+                        Adding a tiny footnote…
                       </p>
                     </div>
                   )}
@@ -942,9 +1025,10 @@ export function MaleTranslator({
           )}
         </AnimatePresence>
 
-        <footer className="text-center text-[11px] text-muted-foreground/80">
-          Voice notes stay on your device until transcribed.
-        </footer>
+          <footer className="text-center text-[11px] text-muted-foreground/80">
+            Voice notes stay on your device until transcribed.
+          </footer>
+        </div>
       </div>
     </>
   )
